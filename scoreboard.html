@@ -107,7 +107,7 @@ body.hasr .vp{font-size:clamp(56px,9vh,110px)}
 .ph{font-size:22px}.rd{font-size:44px}.lbl{font-size:12px}
 .next{height:44px;font-size:16px;padding:0 12px}
 .foot{font-size:12px}.foot>span:first-child{display:none}.foot>span:last-child{width:100%;justify-content:space-between}
-.foot .b{height:40px;flex:1;font-size:13px}
+.foot .b{height:40px;flex:1 1 30%;font-size:13px}.foot>span:last-child{flex-wrap:wrap}
 body.show .board{grid-template-rows:minmax(0,1fr)}
 body.face:not(.show) .p2{order:-2;transform:rotate(180deg)}
 body.face:not(.show) .mid{order:-1}
@@ -144,7 +144,7 @@ body.show .vp{font-size:clamp(90px,22vh,240px)}
  </div>
  <div class="foot ctl">
   <span>Tap a name to change it. +2 = Garrison. Tap a unit's TL to move it up 1. Defeating a unit adds its VP to the other player and TL +2.</span>
-  <span style="display:flex;gap:8px"><button class="b" id="edit">Edit rosters</button><button class="b" id="face">Face-to-face</button><button class="b" id="undo">Undo</button><button class="b" id="reset">New match</button><button class="b" id="disp" style="background:var(--yel);color:#2a2100">Display mode</button></span>
+  <span style="display:flex;gap:8px"><button class="b" id="edit">Edit rosters</button><button class="b" id="face">Face-to-face</button><button class="b" id="undo">Undo</button><button class="b" id="reset">Rematch</button><button class="b" id="wipe">Clear all</button><button class="b" id="disp" style="background:var(--yel);color:#2a2100">Display mode</button></span>
  </div>
 </div>
 <button class="peek" id="peek" aria-label="Show controls"></button>
@@ -178,7 +178,8 @@ function render(){
   });
   document.body.classList.toggle('hasr',!!(st.r1.length||st.r2.length));
   $('undo').style.opacity=hist.length?1:.4;
-  $('reset').textContent=sure?'Tap again to reset':'New match';$('reset').classList.toggle('sure',sure);
+  $('reset').textContent=sure==='re'?'Tap again: rematch':'Rematch';$('reset').classList.toggle('sure',sure==='re');
+  $('wipe').textContent=sure==='wipe'?'Tap again: wipe all':'Clear all';$('wipe').classList.toggle('sure',sure==='wipe');
 }
 document.querySelectorAll('[data-p]').forEach(b=>b.onclick=()=>{const k='v'+b.dataset.p,d=+b.dataset.d;push();st[k]=Math.max(0,Math.min(999,st[k]+d));save();render();bump($(k))});
 $('php').onclick=()=>{push();st.ph=Math.min(4,st.ph+1);save();render()};
@@ -187,7 +188,10 @@ $('rdp').onclick=()=>{push();if(st.rd>=10){if(st.ph<4){st.ph++;st.rd=1}}else st.
 $('rdm').onclick=()=>{push();if(st.rd<=1){if(st.ph>1){st.ph--;st.rd=10}}else st.rd--;save();render()};
 ['n1','n2'].forEach(k=>$(k).addEventListener('change',()=>{const v=$(k).value.trim()||(k==='n1'?'Player 1':'Player 2');if(v!==st[k]){push();st[k]=v;save()}render()}));
 $('undo').onclick=()=>{if(hist.length){st=JSON.parse(hist.pop());save();render()}};
-$('reset').onclick=()=>{const now=Date.now();if(sure&&now-sureT<4000){push();st=Object.assign(fresh(),{n1:st.n1,n2:st.n2,r1:st.r1.map(x=>({id:x.id,hp:UM[x.id].hp,tl:UM[x.id].tl,dead:false})),r2:st.r2.map(x=>({id:x.id,hp:UM[x.id].hp,tl:UM[x.id].tl,dead:false}))});sure=false;save();render();return}sure=true;sureT=now;render();setTimeout(()=>{if(sure&&Date.now()-sureT>=4000){sure=false;render()}},4100)};
+const twice=(k,fn)=>{const now=Date.now();if(sure===k&&now-sureT<4000){push();fn();sure=false;save();render();return}sure=k;sureT=now;render();setTimeout(()=>{if(sure===k&&Date.now()-sureT>=4000){sure=false;render()}},4100)};
+const full=x=>({id:x.id,hp:UM[x.id].hp,tl:UM[x.id].tl,dead:false});
+$('reset').onclick=()=>twice('re',()=>{st=Object.assign(fresh(),{n1:st.n1,n2:st.n2,r1:st.r1.map(full),r2:st.r2.map(full)});toast('Rematch: same players and squads, everything else reset.')});
+$('wipe').onclick=()=>twice('wipe',()=>{st=fresh();toast('Everything cleared. Tap Undo if that was a mistake.')});
 $('ph').onclick=()=>{if(document.body.classList.contains('show'))return;push();st.ph=st.ph>=2?1:st.ph+1;save();render()};
 let face=true;try{const f=localStorage.getItem('ga.face');if(f!==null)face=f==='1'}catch(e){}
 const applyFace=()=>{document.body.classList.toggle('face',face);$('face').textContent=face?'Flip: on':'Flip: off';$('face').style.background=face?'var(--p2)':'';$('face').style.color=face?'#06122a':''};
