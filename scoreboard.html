@@ -87,9 +87,9 @@ body.show .uc,body.show .xb,body.show .radd{display:none!important}
 body.show .tlc{pointer-events:none}
 
 @media(max-width:760px) and (orientation:portrait){
-body.hasr .board{height:auto;min-height:100dvh}
-body.hasr .main{grid-template-rows:auto auto auto}
-body.hasr .vp{font-size:clamp(56px,9vh,110px)}
+.ros,.radd,#edit{display:none!important}
+body.hasr .vp{font-size:clamp(72px,16vh,190px)}
+body.hasr .main{align-items:stretch}
 .ur{gap:6px;padding:5px 6px}.un b{font-size:13px}.tlc{width:44px;height:42px}.tlc b{font-size:19px}.hb{width:40px;height:40px}.uhp{font-size:22px}
 
 .board{height:100vh;height:100dvh;min-height:0;padding:8px;gap:6px;grid-template-rows:minmax(0,1fr) auto}
@@ -107,7 +107,7 @@ body.hasr .vp{font-size:clamp(56px,9vh,110px)}
 .ph{font-size:22px}.rd{font-size:44px}.lbl{font-size:12px}
 .next{height:44px;font-size:16px;padding:0 12px}
 .foot{font-size:12px}.foot>span:first-child{display:none}.foot>span:last-child{width:100%;justify-content:space-between}
-.foot .b{height:40px;flex:1 1 30%;font-size:13px}.foot>span:last-child{flex-wrap:wrap}
+.foot .b{height:40px;flex:1;font-size:13px}
 body.show .board{grid-template-rows:minmax(0,1fr)}
 body.face:not(.show) .p2{order:-2;transform:rotate(180deg)}
 body.face:not(.show) .mid{order:-1}
