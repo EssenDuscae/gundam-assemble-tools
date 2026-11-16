@@ -1,0 +1,650 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>GA Squad Tracker</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Oxanium:wght@500;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+/* VOICE: a pit-crew status board — fast taps mid-game, nothing to read twice.
+   IDEA: each unit is its own unit card: red header strip, big HP, upgrade tokens in their token colours.
+   PICTURE: the squad itself — three to five live cards stacked on one phone screen.
+   COLOUR and TYPE: card red header, Federation blue, token colours (red Strength, blue Shield, green Speed, yellow Energy); Oxanium + Inter.
+   LAYOUT: score bar on top, compact cards that expand for full controls; grid of cards on iPad. */
+:root{color-scheme:light dark;
+--bg:light-dark(#eef1f6,#0b1019);--card:light-dark(#ffffff,#151c2c);--ink:light-dark(#111a2c,#e8edf7);--mute:light-dark(#5b6781,#94a1bb);
+--line:light-dark(#dde2ec,#28324b);--red:#c8102e;--blue:#1f4fbf;--grn:#1f9d55;--yel:#e8b400;--soft:light-dark(#f3f5f9,#1c2438)}
+:root[data-theme=light]{color-scheme:light}:root[data-theme=dark]{color-scheme:dark}
+*{box-sizing:border-box;min-width:0}
+body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.45 Inter,system-ui,sans-serif;overflow-x:clip;-webkit-tap-highlight-color:transparent}
+button,input,select,textarea{font:inherit;color:inherit;touch-action:manipulation}
+button{cursor:pointer}
+:focus-visible{outline:3px solid var(--yel);outline-offset:2px}
+.top{position:sticky;top:0;z-index:5;background:var(--blue);color:#fff;padding:8px 12px;display:flex;flex-wrap:wrap;gap:6px 12px;align-items:center;justify-content:space-between}
+.sc{display:flex;align-items:center;gap:2px}
+.sc span{font-size:13px;opacity:.85;margin-right:4px}
+.sc b{font:700 22px Oxanium,sans-serif;min-width:30px;text-align:center}
+.sc button,.ub{width:36px;height:36px;border-radius:8px;border:0;background:rgba(255,255,255,.16);color:#fff;font-size:18px;font-weight:600}
+.ub{width:auto;padding:0 12px;font-size:14px}
+.vsel{-webkit-appearance:none;appearance:none;height:36px;min-width:44px;margin:0 2px;padding:0 6px;border:0;border-radius:8px;background:rgba(255,255,255,.12);color:#fff;font:700 22px Oxanium,sans-serif;text-align:center;text-align-last:center;box-shadow:inset 0 -2px 0 rgba(255,255,255,.5)}
+.vsel option{color:#111;background:#fff}
+main{padding:10px;display:grid;gap:10px;grid-template-columns:repeat(auto-fill,minmax(min(100%,340px),1fr));max-width:1240px;margin:0 auto}
+.u{background:var(--card);border-radius:12px;overflow:hidden;box-shadow:0 1px 0 var(--line)}
+.u.res{opacity:.8}
+.hd{display:flex;align-items:stretch;background:var(--red);color:#fff}
+.nm{flex:1;text-align:left;background:none;border:0;padding:6px 10px;min-height:44px;color:#fff}
+.nm small{display:block;font-size:12px;opacity:.85;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.nm b{display:block;font:700 16px/1.2 Oxanium,sans-serif}
+.grip{width:36px;flex:none;display:grid;place-items:center;color:#fff;background:rgba(0,0,0,.18);touch-action:none;cursor:grab;-webkit-user-select:none;user-select:none}
+.u.drag{position:relative;z-index:3;box-shadow:0 10px 28px rgba(0,0,0,.35);outline:3px solid var(--yel)}
+.u.drag .grip{cursor:grabbing;background:var(--yel);color:#211a00}
+.bin{width:44px;border:0;background:rgba(0,0,0,.18);color:#fff;display:grid;place-items:center;flex:none}
+.bin.sure{width:auto;padding:0 10px;background:var(--yel);color:#211a00;font:700 13px Inter,sans-serif}
+.tl{background:var(--yel);color:#211a00;padding:4px 10px;text-align:center;font-size:11px;min-width:58px;display:grid;align-content:center}
+.vpb{background:#fff;color:var(--red);padding:4px 8px;text-align:center;font-size:11px;font-weight:700;min-width:50px;display:grid;align-content:center;border-left:1px solid rgba(0,0,0,.08)}.vpb b{font:700 22px/1 Oxanium,sans-serif}
+.tl b{font:700 22px/1 Oxanium,sans-serif}
+.tl.nx{background:var(--yel);color:#211a00}
+.hp{display:grid;grid-template-columns:44px minmax(0,1fr) 44px;gap:8px;align-items:center;padding:8px 10px 4px}
+.hp button{height:44px;border-radius:10px;border:1px solid var(--line);background:var(--soft);font-size:22px;font-weight:600}
+.hv{text-align:center}
+.hv b{font:700 30px/1 Oxanium,sans-serif}.hv span{color:var(--mute);font-size:14px}
+.bar{height:8px;border-radius:3px;background:var(--soft);margin-top:4px;overflow:hidden}
+.bar i{display:block;height:100%;background:#22a447}
+.mid .bar i{background:#f2b705}
+.low .bar i{background:var(--red)}.low .hv b{color:var(--red)}
+.chips{display:flex;flex-wrap:wrap;gap:4px;padding:4px 10px 10px}
+.c{font:600 12px/1 Inter,sans-serif;padding:5px 7px;border-radius:6px;background:var(--soft);color:var(--mute);white-space:nowrap}
+.c.en{background:var(--yel);color:#211a00}.c.sh{background:var(--blue);color:#fff}.c.sh.off{background:transparent;color:var(--blue);box-shadow:inset 0 0 0 1.5px var(--blue)}
+.c.sp{background:var(--grn);color:#fff}.c.st{background:var(--red);color:#fff}.c.fx{background:#3b3f4a;color:#fff}
+.more{border-top:1px solid var(--line);padding:10px;display:grid;gap:10px}
+.ctrs{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:6px}
+.ctr{display:grid;grid-template-columns:40px minmax(0,1fr) 40px;align-items:center;gap:4px;background:var(--soft);border-radius:10px;padding:6px}
+.ctr span{font-size:12px;color:var(--mute);grid-column:1/-1;padding-left:2px}
+.ctr button{height:40px;border-radius:8px;border:1px solid var(--line);background:var(--card);font-size:18px;font-weight:600}
+.ctr b{text-align:center;font:700 20px Oxanium,sans-serif}
+.row{display:flex;flex-wrap:wrap;gap:6px}
+.tg,.ab{min-height:44px;padding:0 12px;border-radius:10px;border:1px solid var(--line);background:var(--card);font-size:14px;font-weight:600}
+.tg[aria-pressed=true]{color:#fff;border-color:transparent}
+.tg[data-f=dis][aria-pressed=true],.c.dis{background:#8b5cf6;color:#fff}
+.tg[data-f=fra][aria-pressed=true],.c.fra{background:#ff7a1a;color:#fff}
+.tg[data-f=slo][aria-pressed=true],.c.slo{background:#0ea5e9;color:#fff}
+.ab.pri{background:var(--blue);color:#fff;border-color:var(--blue)}
+.ab.warn{background:var(--red);color:#fff;border-color:var(--red)}
+.ab.sure{background:var(--yel);color:#211a00;border-color:var(--yel)}
+.wp{display:grid;gap:6px}
+.w{background:var(--soft);border-radius:10px;padding:8px 10px;font-size:14px}
+.w b{font-family:Oxanium,sans-serif;font-size:15px}
+.st{display:flex;gap:10px;flex-wrap:wrap;color:var(--mute);font-size:13px;margin:2px 0}
+.st em{font-style:normal;color:var(--ink);font-weight:600}
+.w p{margin:4px 0 0}
+.tag{display:inline-flex;align-items:center;gap:3px;font-size:11px;font-weight:700;padding:2px 6px;border-radius:4px;background:#3b3f4a;color:#fff;margin-right:4px;white-space:nowrap;vertical-align:1px}
+.tag.ty-ongoing{background:#1fa64a}.tag.ty-command{background:#1f4fbf}.tag.ty-response{background:#f07a12}.tag.ty-attack{background:#c8102e}.tag.ty-setup{background:#6b7280}
+textarea{width:100%;min-height:44px;border:1px solid var(--line);border-radius:10px;background:var(--card);padding:8px;font-size:16px;resize:vertical}
+.foot{display:flex;gap:8px;flex-wrap:wrap;padding:0 10px 10px;max-width:1240px;margin:0 auto}
+.foot .ab{flex:1 1 140px}
+#msg{color:var(--mute);font-size:13px;padding:0 12px 24px;max-width:1240px;margin:0 auto}
+.empty{grid-column:1/-1;text-align:center;padding:40px 16px;color:var(--mute)}
+.sheet{position:fixed;inset:0;z-index:9;background:rgba(5,10,20,.55);display:flex;align-items:flex-end;justify-content:center}
+.sheet[hidden]{display:none}
+.pane{background:var(--card);width:min(100%,560px);max-height:90vh;overflow:auto;border-radius:16px 16px 0 0;padding:14px 14px 28px}
+.pane h2{font:700 20px Oxanium,sans-serif;margin:0 0 10px;display:flex;justify-content:space-between;align-items:center}
+.pick{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:6px;margin-bottom:6px}
+.pick .ab{text-align:left}
+.pick small{display:block;font-weight:400;color:var(--mute);font-size:12px}
+.f{display:grid;gap:4px;margin-bottom:8px;font-size:13px;color:var(--mute)}
+.f input,.f select,.f textarea{height:44px;border:1px solid var(--line);border-radius:8px;background:var(--bg);padding:0 10px;font-size:16px;color:var(--ink)}
+.f textarea{height:auto;padding:8px 10px}
+.g3{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:6px}
+.box{border:1px solid var(--line);border-radius:10px;padding:8px;margin-bottom:8px}
+@media(prefers-reduced-motion:no-preference){.bar i{transition:width .25s}}
+.tabs{display:flex;gap:4px;flex:1 1 auto}
+.tabs button{min-height:40px;padding:0 14px;border-radius:10px;border:0;background:rgba(255,255,255,.16);color:#fff;font:700 15px Oxanium,sans-serif}
+.tabs button[aria-pressed=true]{background:#fff;color:var(--blue)}
+.scs{display:flex;flex:1 1 100%;justify-content:space-between;gap:6px;flex-wrap:wrap}
+.wh{display:flex;justify-content:space-between;align-items:center;gap:8px}
+.aoe{display:flex;align-items:center;gap:10px;margin-top:6px}.aoe span{font-size:12px;color:var(--mute);line-height:1.3}.aoesvg{flex:none;max-width:45%;height:auto}
+#calc .aoe.on{background:rgba(255,255,255,.95);border-radius:10px;padding:6px 8px;margin-top:8px}#calc .aoe.on span{color:#333}
+.rws{display:flex;align-items:center;gap:6px;margin:0 10px 10px;padding:6px 8px;border-radius:10px;border:1px dashed #8a97b8;background:var(--soft)}
+.rws.on{border-style:solid;border-color:#5b6b8a;background:light-dark(#e9eef8,#1d2740)}
+.rws .rn{flex:1;display:grid;line-height:1.2}.rws .rn b{font:700 14px Oxanium,sans-serif}.rws .rn small{font-size:12px;color:var(--mute)}
+.skb{display:flex;flex-direction:column;align-items:flex-start;gap:2px;width:100%;text-align:left;background:none;border:0;padding:0;color:inherit;cursor:pointer}.skb i{font:600 12px system-ui,sans-serif;font-style:normal;color:#fff;background:#5b6b8a;border-radius:6px;padding:3px 7px}.skb.on i{background:#2e8b57}
+.rws .rh{font:700 15px Oxanium,sans-serif;white-space:nowrap}
+.rb2{min-width:40px;height:40px;border-radius:8px;border:1px solid var(--line);background:var(--card);font-size:18px;font-weight:600}
+.rb2.wide{padding:0 10px;font-size:13px}.rb2.dep{background:#5b6b8a;color:#fff;border-color:#5b6b8a}
+.wq{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:6px;padding:0 10px 10px}
+.wb{position:relative;min-height:46px;border-radius:10px;border:0;background:var(--blue);color:#fff;text-align:left;padding:6px 48px 6px 10px}
+.wb b{display:block;font:700 14px/1.2 Oxanium,sans-serif;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.wb span{display:block;font-size:12px;opacity:.9;white-space:nowrap}
+.wb i{position:absolute;right:6px;top:50%;transform:translateY(-50%);font:700 12px Oxanium,sans-serif;font-style:normal;background:#ffd400;color:#211a00;border-radius:6px;padding:4px 6px}
+/* attack roll calculator view */
+#calc{padding:10px;max-width:1240px;margin:0 auto}
+#calc .cgrid{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.1fr);gap:14px;align-items:start}
+#calc .ctl{display:grid;gap:12px}
+#calc fieldset{border:1px solid var(--line);border-radius:12px;padding:10px 14px 12px;margin:0;background:var(--card)}
+#calc legend{padding:0;width:100%;float:left}
+#calc legend+*{clear:both}
+#calc fieldset{display:flow-root}
+#calc .fold{display:flex;align-items:center;gap:8px;width:100%;min-height:40px;padding:0 6px;border:0;background:none;color:var(--ink);text-align:left}
+#calc .fname{font:700 16px Oxanium,sans-serif;white-space:nowrap}
+#calc .fsum{flex:1;font-size:13px;color:var(--mute);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;text-align:right}
+#calc .chev{flex:none;transition:transform .2s;color:var(--mute)}
+#calc fieldset.shut .chev{transform:rotate(-90deg)}
+#calc fieldset.shut>:not(legend){display:none}
+#calc fieldset.shut{padding-top:4px;padding-bottom:4px}
+#calc .crow{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:6px 0;flex-wrap:wrap}
+#calc .crow+.crow{border-top:1px solid var(--line)}
+#calc .crow label{flex:1 1 150px}
+#calc .crow small{display:block;color:var(--mute);font-size:13px;line-height:1.3}
+#calc .step{display:flex;align-items:center;gap:4px}
+#calc .step button{width:44px;height:44px;border-radius:10px;border:1px solid var(--line);background:var(--bg);font:600 18px Inter,sans-serif}
+#calc .step input{width:56px;height:44px;text-align:center;font:600 16px Inter,sans-serif;border:1px solid var(--line);border-radius:10px;background:var(--bg);color:var(--ink)}
+#calc select{height:44px;font-size:16px;border:1px solid var(--line);border-radius:10px;padding:0 10px;background:var(--bg);color:var(--ink);max-width:100%}
+#calc .chk{display:flex;gap:10px;align-items:center;min-height:44px;cursor:pointer;font-size:15px}
+#calc .chk input{width:22px;height:22px;accent-color:var(--blue);flex:none}
+#calc .two{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:0 12px}
+#calc .out{position:sticky;top:112px;background:var(--blue);color:#fff;border-radius:16px;padding:16px;display:grid;gap:14px}
+#calc .who{margin:0;font-size:14px;line-height:1.35}
+#calc .who b{font-family:Oxanium,sans-serif;font-size:16px}
+#calc .big{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}
+#calc .big div{background:rgba(0,0,0,.18);border-radius:12px;padding:10px}
+#calc .big b{display:block;font:700 clamp(26px,5vw,40px)/1 Oxanium,sans-serif;white-space:nowrap}
+#calc .big span{font-size:13px;opacity:.85}
+#calc .big .dfeat b{color:#ffd400}
+#calc h2{font:700 17px Oxanium,sans-serif;margin:0 0 6px}
+#calc .faces{display:grid;grid-template-columns:repeat(10,minmax(0,1fr));gap:4px}
+#calc .face{border-radius:8px;text-align:center;padding:6px 0;font:700 16px Oxanium,sans-serif;background:rgba(255,255,255,.12);color:rgba(255,255,255,.55)}
+#calc .face.h{background:#fff;color:#173d96}#calc .face.c{background:#ffd400;color:#2a2100}
+#calc .face small{display:block;font:500 11px Inter,sans-serif;opacity:.8}
+#calc .cap{font-size:13px;opacity:.85;margin:6px 0 0}
+#calc .dbars{display:grid;gap:4px}
+#calc .dbar{display:grid;grid-template-columns:3.2em minmax(0,1fr) 3.6em;gap:8px;align-items:center;font-size:14px}
+#calc .dbar i{display:block;height:18px;border-radius:4px;background:#fff;min-width:2px}
+#calc .dbar.k i{background:#ffd400}
+#calc .dbar span:last-child{text-align:right;font-variant-numeric:tabular-nums}
+#calc .tray{display:flex;flex-wrap:wrap;gap:6px}#calc .tray:empty{display:none}
+#calc .last{display:flex;align-items:center;gap:14px;background:rgba(0,0,0,.2);border-radius:12px;padding:10px 14px}
+#calc .lnum{text-align:center;min-width:90px}
+#calc .lnum b{display:block;font:700 clamp(52px,15vw,76px)/1 Oxanium,sans-serif}
+#calc .lnum span{font-size:12px;opacity:.85;white-space:nowrap}
+#calc .lnum.kill b{color:#ffd400}
+#calc .lmeta{display:grid;gap:8px;flex:1}
+#calc .d{width:42px;height:42px;border-radius:9px;display:grid;place-items:center;font:700 18px Oxanium,sans-serif;background:rgba(255,255,255,.15);color:#fff;position:relative}
+#calc .d.h{background:#fff;color:#173d96}#calc .d.c{background:#ffd400;color:#2a2100}
+#calc .d.x{opacity:.45;text-decoration:line-through}
+#calc .d sup{position:absolute;top:2px;right:4px;font-size:10px}
+#calc .anim{display:flex;align-items:center;gap:8px;font-size:13px;opacity:.95;min-height:32px}#calc .anim select{height:32px;font-size:14px;border-radius:8px;border:0;padding:0 6px;background:rgba(255,255,255,.2);color:#fff}#calc .anim option{color:#111}
+#calc .tcan{display:block;width:100%;height:190px;border-radius:12px}#calc .tcan[hidden]{display:none}
+#calc .go:disabled{opacity:.6}
+#calc .lnum.wait b{opacity:.5}
+#calc .tray.anim .d{animation:none}
+#calc .d.spin{background:rgba(255,255,255,.28);animation:tumble .28s linear infinite!important}
+#calc .d.land{animation:land .3s cubic-bezier(.2,1.6,.4,1)!important}
+@keyframes tumble{0%{transform:rotate(0) translateY(0)}25%{transform:rotate(18deg) translateY(-5px)}50%{transform:rotate(-6deg) translateY(0)}75%{transform:rotate(-18deg) translateY(-4px)}100%{transform:rotate(0) translateY(0)}}
+@keyframes land{0%{transform:scale(1.35)}100%{transform:scale(1)}}
+#calc .roll{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+#calc .go{min-height:44px;padding:0 20px;border-radius:10px;border:0;background:#ffd400;color:#2a2100;font:700 16px Oxanium,sans-serif}
+#calc .cres{font-size:15px}#calc .cres b{font-family:Oxanium,sans-serif}
+#calc .cfoot{color:var(--mute);font-size:13px;margin:0}
+@media(max-width:860px){#calc .cgrid{grid-template-columns:minmax(0,1fr)}#calc .out{position:static}}
+@media(max-width:520px){#calc .two{grid-template-columns:minmax(0,1fr)}#calc .big{grid-template-columns:minmax(0,1fr) minmax(0,1fr)}#calc .big .dfeat{grid-column:1/-1}#calc .face small{display:none}}
+@media(prefers-reduced-motion:no-preference){#calc .d{animation:pop .25s ease-out both}@keyframes pop{from{transform:scale(.6) rotate(-20deg);opacity:0}}}
+@media(min-width:1000px){
+html,body{height:100%}
+body{display:flex;flex-direction:column;height:100vh;height:100dvh;overflow:hidden}
+.top{position:static;flex:none;flex-wrap:nowrap;padding:8px 16px}
+.tabs{display:none}
+.ub{order:2;margin-left:auto}
+.scs{flex:1 1 auto;justify-content:flex-start;gap:22px;flex-wrap:nowrap}
+.split{flex:1;min-height:0;display:grid;grid-template-columns:minmax(0,1.15fr) minmax(0,1fr)}
+#squadv,#calc{overflow-y:auto;min-height:0;-webkit-overflow-scrolling:touch;overscroll-behavior:contain}
+#squadv[hidden],#calc[hidden]{display:block}
+#calc{max-width:none;margin:0;border-left:1px solid var(--line);padding:12px}
+#calc .cgrid{grid-template-columns:minmax(0,1fr)}
+#calc .out{position:static}
+main{grid-template-columns:repeat(auto-fill,minmax(min(100%,290px),1fr));max-width:none;padding:12px}
+.foot{max-width:none;padding:0 12px 10px}
+#msg{max-width:none}
+}
+</style>
+</head>
+<body>
+<header class="top">
+  <nav class="tabs" aria-label="Screens"><button data-act="view" data-v="squad" aria-pressed="true">Squad</button><button data-act="view" data-v="attack" aria-pressed="false">Attack roll</button></nav>
+  <button class="ub" data-act="undo" id="undo">Undo</button>
+  <div class="scs">
+  <div class="sc"><span>Your VP</span><button data-act="vp" data-f="me" data-d="-1" aria-label="your VP down">−</button><select id="vme" class="vsel" aria-label="Your VP"><option>0</option><option>1</option><option>2</option><option>3</option><option>4</option><option>5</option><option>6</option><option>7</option><option>8</option><option>9</option><option>10</option><option>11</option><option>12</option><option>13</option><option>14</option><option>15</option><option>16</option><option>17</option><option>18</option><option>19</option><option>20</option><option>21</option><option>22</option><option>23</option><option>24</option><option>25</option><option>26</option><option>27</option><option>28</option><option>29</option><option>30</option><option>31</option><option>32</option><option>33</option><option>34</option><option>35</option><option>36</option><option>37</option><option>38</option><option>39</option><option>40</option><option>41</option><option>42</option><option>43</option><option>44</option><option>45</option><option>46</option><option>47</option><option>48</option><option>49</option><option>50</option><option>51</option><option>52</option><option>53</option><option>54</option><option>55</option><option>56</option><option>57</option><option>58</option><option>59</option><option>60</option><option>61</option><option>62</option><option>63</option><option>64</option><option>65</option><option>66</option><option>67</option><option>68</option><option>69</option><option>70</option><option>71</option><option>72</option><option>73</option><option>74</option><option>75</option><option>76</option><option>77</option><option>78</option><option>79</option><option>80</option><option>81</option><option>82</option><option>83</option><option>84</option><option>85</option><option>86</option><option>87</option><option>88</option><option>89</option><option>90</option><option>91</option><option>92</option><option>93</option><option>94</option><option>95</option><option>96</option><option>97</option><option>98</option><option>99</option></select><button data-act="vp" data-f="me" data-d="1" aria-label="your VP up">+</button></div>
+  <div class="sc"><span>Opp VP</span><button data-act="vp" data-f="opp" data-d="-1" aria-label="opponent VP down">−</button><select id="vop" class="vsel" aria-label="Opponent VP"><option>0</option><option>1</option><option>2</option><option>3</option><option>4</option><option>5</option><option>6</option><option>7</option><option>8</option><option>9</option><option>10</option><option>11</option><option>12</option><option>13</option><option>14</option><option>15</option><option>16</option><option>17</option><option>18</option><option>19</option><option>20</option><option>21</option><option>22</option><option>23</option><option>24</option><option>25</option><option>26</option><option>27</option><option>28</option><option>29</option><option>30</option><option>31</option><option>32</option><option>33</option><option>34</option><option>35</option><option>36</option><option>37</option><option>38</option><option>39</option><option>40</option><option>41</option><option>42</option><option>43</option><option>44</option><option>45</option><option>46</option><option>47</option><option>48</option><option>49</option><option>50</option><option>51</option><option>52</option><option>53</option><option>54</option><option>55</option><option>56</option><option>57</option><option>58</option><option>59</option><option>60</option><option>61</option><option>62</option><option>63</option><option>64</option><option>65</option><option>66</option><option>67</option><option>68</option><option>69</option><option>70</option><option>71</option><option>72</option><option>73</option><option>74</option><option>75</option><option>76</option><option>77</option><option>78</option><option>79</option><option>80</option><option>81</option><option>82</option><option>83</option><option>84</option><option>85</option><option>86</option><option>87</option><option>88</option><option>89</option><option>90</option><option>91</option><option>92</option><option>93</option><option>94</option><option>95</option><option>96</option><option>97</option><option>98</option><option>99</option></select><button data-act="vp" data-f="opp" data-d="1" aria-label="opponent VP up">+</button></div>
+  <div class="sc"><span>Phase</span><button data-act="ph" data-d="-1" aria-label="phase down">−</button><b id="vph">1</b><button data-act="ph" data-d="1" aria-label="phase up">+</button></div>
+  </div>
+</header>
+<div class="split">
+<div id="squadv">
+<main id="list"><p class="empty">Loading your squad…</p></main>
+<div class="foot">
+  <button class="ab pri" data-act="pick">Add unit to squad</button>
+  <button class="ab" data-act="newgame" id="ng">New game</button>
+  <button class="ab" data-act="clear" id="clr">Clear all</button>
+</div>
+<p id="msg"></p>
+</div>
+<section id="calc" hidden>
+ <div class="cgrid">
+  <section class="out" aria-live="polite">
+    <p class="who" id="who">Set up any attack below, or tap <b>Roll</b> on a weapon in Squad to load it here.</p>
+    <div class="last"><div class="lnum" id="lnum"><b id="ldmg">–</b><span>damage this roll</span></div>
+      <div class="lmeta"><button type="button" class="go" id="rollb">Roll the dice</button><span class="cres" id="res">No roll yet.</span><label class="anim">Dice animation <select id="anim"><option value="tray">Rolling dice</option><option value="simple">Simple</option><option value="off">Off</option></select></label></div></div>
+    <canvas class="tcan" id="tcan" hidden aria-label="Dice tray"></canvas>
+    <div class="tray" id="tray"></div>
+    <div class="big">
+      <div class="dfeat"><b id="pk">–</b><span>chance to defeat</span></div>
+      <div><b id="ev">–</b><span>expected damage</span></div>
+      <div><b id="pc">–</b><span>crit effect triggers</span></div>
+    </div>
+    <div><h2>Each d10 face</h2><div class="faces" id="faces"></div><p class="cap" id="acccap"></p></div>
+    <div><h2>Damage dealt</h2><div class="dbars" id="bars"></div></div>
+  </section>
+  <form class="ctl" id="cf">
+    <fieldset data-fold="str"><legend><button type="button" class="fold" aria-expanded="true"><span class="fname">Strength</span><span class="fsum" id="sum-str"></span><svg class="chev" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg></button></legend>
+      <div class="crow"><label for="str">Weapon Strength<small>Number of attack dice on the weapon</small></label><div class="step" data-s="str"></div></div>
+      <div class="crow"><label for="up">Strength Upgrades<small>+1 die each</small></label><div class="step" data-s="up"></div></div>
+      <div class="crow"><label for="sm">Other Strength change<small>From Tactics cards or abilities</small></label><div class="step" data-s="sm"></div></div>
+    </fieldset>
+    <fieldset data-fold="acc"><legend><button type="button" class="fold" aria-expanded="true"><span class="fname">Accuracy</span><span class="fsum" id="sum-acc"></span><svg class="chev" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg></button></legend>
+      <div class="crow"><label for="elev">Elevation<small>Compared with the attacker</small></label>
+        <select id="elev"><option value="0">Same level</option><option value="-1">Target higher (−1)</option><option value="1">Target lower (+1)</option></select></div>
+      <div class="two">
+        <label class="chk"><input type="checkbox" id="aw">Attacker in water (−1)</label>
+        <label class="chk"><input type="checkbox" id="tw">Target in water (−1)</label>
+        <label class="chk"><input type="checkbox" id="ad">Attacker in debris (−1)</label>
+        <label class="chk"><input type="checkbox" id="td">Target in debris (−1)</label>
+        <label class="chk"><input type="checkbox" id="am">Attacker in Minovsky</label>
+        <label class="chk"><input type="checkbox" id="tm">Target in Minovsky</label>
+      </div>
+      <label class="chk"><input type="checkbox" id="adj">Target is adjacent (Minovsky −2 applies only to non-adjacent targets)</label>
+      <div class="crow"><label for="am2">Other Accuracy change<small>From abilities or cards</small></label><div class="step" data-s="am2"></div></div>
+    </fieldset>
+    <fieldset data-fold="crit"><legend><button type="button" class="fold" aria-expanded="true"><span class="fname">Critical hits</span><span class="fsum" id="sum-crit"></span><svg class="chev" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg></button></legend>
+      <div class="crow"><label for="ct">Crits on this roll or higher<small>Standard is 9 (9–10). Lower for units like Zero System (7)</small></label><div class="step" data-s="ct"></div></div>
+      <div class="crow"><label for="cd">Crit effect: Damage +<small>0 if the crit effect is a status, Push, etc.</small></label><div class="step" data-s="cd"></div></div>
+      <label class="chk"><input type="checkbox" id="pcon">Per-crit damage bonus (Wing Zero's Twin Buster Rifle: +1 per crit rolled, max +4)</label>
+      <div id="pcrows" hidden>
+      <div class="crow"><label for="pcd">Damage + per crit rolled</label><div class="step" data-s="pcd"></div></div>
+      <div class="crow"><label for="cap">Max per-crit bonus</label><div class="step" data-s="cap"></div></div>
+      </div>
+      <div class="crow"><label for="cn">Crits needed<small>Some effects need 2 or more crits</small></label><div class="step" data-s="cn"></div></div>
+    </fieldset>
+    <fieldset data-fold="def"><legend><button type="button" class="fold" aria-expanded="true"><span class="fname">Defender and status</span><span class="fsum" id="sum-def"></span><svg class="chev" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg></button></legend>
+      <div class="crow"><label for="hp">Target's current HP<small>Garrisons have 1</small></label><div class="step" data-s="hp"></div></div>
+      <div class="crow"><label for="sh">Active Shields<small>Each prevents 1 damage</small></label><div class="step" data-s="sh"></div></div>
+      <div class="crow"><label for="dr">Other damage reduction<small>Applied before Shields</small></label><div class="step" data-s="dr"></div></div>
+      <label class="chk"><input type="checkbox" id="fr">Target is Fractured (+3 if 3 or more damage)</label>
+      <label class="chk"><input type="checkbox" id="ds">Attacker is Disarmed (re-roll hits, no crit effect)</label>
+    </fieldset>
+    <p class="cfoot">Fracture is checked after Shields (step 8 of the attack sequence). Single-target odds; for area attacks, set up each target separately.</p>
+  </form>
+ </div>
+</section>
+</div>
+<div class="sheet" id="sheet" hidden><div class="pane" id="pane"></div></div>
+<script>
+(()=>{
+const NUM={ct:[9,2,10],str:[4,0,30],up:[0,0,10],sm:[0,-10,10],am2:[0,-5,5],cd:[0,0,10],pcd:[1,1,5],cap:[4,1,10],cn:[1,1,5],hp:[6,1,30],sh:[0,0,10],dr:[0,0,10]};
+const $=id=>document.getElementById(id);
+const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+document.querySelectorAll('#calc .step').forEach(el=>{
+  const k=el.dataset.s,[v,mn,mx]=NUM[k];
+  el.innerHTML=`<button type="button" aria-label="decrease">−</button><input id="${k}" type="number" inputmode="numeric" value="${v}" min="${mn}" max="${mx}"><button type="button" aria-label="increase">+</button>`;
+  const [d,inp,u]=el.children;
+  const set=n=>{inp.value=Math.max(mn,Math.min(mx,n));calc()};
+  d.onclick=()=>set(+inp.value-1);u.onclick=()=>set(+inp.value+1);
+});
+const n=k=>{const [,mn,mx]=NUM[k];return Math.max(mn,Math.min(mx,parseInt($(k).value)||0))};
+const c=k=>$(k).checked;
+function read(){
+  const minov=!c('adj')&&(c('am')||c('tm'))?-2:0;
+  const acc=+$('elev').value-(c('aw')?1:0)-(c('tw')?1:0)-(c('ad')?1:0)-(c('td')?1:0)+minov+n('am2');
+  return{dice:Math.max(0,n('str')+n('up')+n('sm')),acc,ct:n('ct'),cd:n('cd'),pcd:c('pcon')?n('pcd'):0,cap:n('cap'),cn:n('cn'),hp:n('hp'),sh:n('sh'),dr:n('dr'),fr:c('fr'),ds:c('ds')};
+}
+const face=(f,s)=>f===1?'m':f>=s.ct?'c':(f+s.acc>=4?'h':'m');
+function dmg(h,cr,s){let r=h+(!s.ds&&s.cd>0&&cr>=s.cn?s.cd:0)+(!s.ds&&s.pcd>0?Math.min(s.cap,cr*s.pcd):0);r=Math.max(0,r-s.dr);r=Math.max(0,r-s.sh);if(s.fr&&r>=3)r+=3;return r}
+const pct=p=>p<=0?'0%':p>=1?'100%':p<0.001?'<0.1%':p>0.999?'>99.9%':(p*100).toFixed(p<0.1?1:0)+'%';
+function calc(){
+  const s=read();let pm=0,ph=0,pc=0;const fs=[];
+  for(let f=1;f<=10;f++){const o=face(f,s);fs.push(o);if(o==='m')pm++;else if(o==='h')ph++;else pc++;}
+  pm/=10;ph/=10;pc/=10;
+  $('faces').innerHTML=fs.map((o,i)=>`<div class="face ${o==='m'?'':o}">${i+1}<small>${o==='m'?'miss':o==='h'?'hit':'crit'}</small></div>`).join('');
+  const need=Math.max(2,4-s.acc);
+  $('acccap').textContent=`Net Accuracy ${s.acc>=0?'+':''}${s.acc} · rolling ${s.dice} dice · ${need<s.ct?need+'+ hits':'only crits hit'} · crits on ${s.ct<10?s.ct+'–10':'10'}`+(s.ds?' · Disarmed: hits re-rolled once':'');
+  const ph2=s.ds?(ph+pc)*(ph+pc):ph,pc2=s.ds?0:pc,pm2=1-ph2-pc2;
+  let D=[[1]];
+  for(let i=0;i<s.dice;i++){const N=[];for(let h=0;h<=i+1;h++)N.push(new Array(i+2).fill(0));
+    D.forEach((row,h)=>row.forEach((p,cr)=>{if(!p)return;N[h][cr]+=p*pm2;N[h+1][cr]+=p*ph2;N[h+1][cr+1]+=p*pc2;}));D=N;}
+  const dist={};let ev=0,pk=0,pcr=0;
+  D.forEach((row,h)=>row.forEach((p,cr)=>{if(!p)return;const d=dmg(h,cr,s);dist[d]=(dist[d]||0)+p;ev+=p*d;if(d>=s.hp)pk+=p;if(!s.ds&&cr>=s.cn)pcr+=p;}));
+  const sg=v=>(v>=0?'+':'')+v;$('sum-str').textContent=s.dice+' dice';$('sum-acc').textContent='Accuracy '+sg(s.acc);
+  $('sum-crit').textContent='Crits '+(s.ct<10?s.ct+'–10':'10')+(s.cd?' · +'+s.cd+' dmg':'')+(s.pcd?' · +'+s.pcd+'/crit (max '+s.cap+')':'');
+  $('sum-def').textContent='HP '+s.hp+(s.sh?' · '+s.sh+' Shield':'')+(s.dr?' · −'+s.dr:'')+(s.fr?' · Fractured':'')+(s.ds?' · Disarmed':'');
+  $('pk').textContent=pct(pk);$('ev').textContent=ev.toFixed(2);$('pc').textContent=s.ds?'none':pct(pcr);
+  const keys=Object.keys(dist).map(Number).sort((a,b)=>a-b),mx=Math.max(...keys.map(k=>dist[k]));
+  $('bars').innerHTML=keys.map(k=>`<div class="dbar ${k>=s.hp?'k':''}"><span>${k} dmg</span><span><i style="width:${dist[k]/mx*100}%"></i></span><span>${pct(dist[k])}</span></div>`).join('')+`<p class="cap">Yellow bars defeat the target (${s.hp} HP).</p>`;
+  return s;
+}
+let rolling=false;
+function throwDice(items,done){
+  const cv=$('tcan');cv.hidden=false;const dpr=Math.min(2,window.devicePixelRatio||1),W=cv.clientWidth||320,H=Math.max(170,Math.min(240,Math.round(W*.5)));
+  cv.style.height=H+'px';cv.width=W*dpr;cv.height=H*dpr;const g=cv.getContext('2d');g.setTransform(dpr,0,0,dpr,0,0);
+  const n=items.length,R=Math.max(13,Math.min(24,Math.sqrt(W*H/(n*9))));
+  const ds=items.map((it,i)=>({it,x:R+Math.random()*R*1.5,y:R+Math.random()*(H-2*R),vx:(190+Math.random()*400)*(W/360),vy:(Math.random()-.5)*480,a:Math.random()*6.28,va:(Math.random()<.5?-1:1)*(9+Math.random()*12),shown:1+Math.floor(Math.random()*10),landed:false,delay:i*0.025}));
+  const col={c:['#ffd400','#2a2100'],h:['#ffffff','#173d96'],'':['#3f63c9','#d6defa']};
+  const draw=()=>{g.clearRect(0,0,W,H);g.fillStyle='rgba(0,0,0,.18)';g.beginPath();g.roundRect?g.roundRect(0,0,W,H,12):g.rect(0,0,W,H);g.fill();
+    for(const d of ds){if(d.delay>0)continue;const key=d.it.c.replace(' x','').trim(),[fill,ink]=d.landed?(col[key]||col['']):['#eef2fb','#1b2a4a'];
+      g.save();g.translate(d.x,d.y+R*.18);g.rotate(d.a);g.fillStyle='rgba(0,0,0,.25)';g.beginPath();g.ellipse(0,R*.25,R*.95,R*.55,0,0,6.28);g.fill();g.restore();
+      g.save();g.translate(d.x,d.y);g.rotate(d.a);if(d.landed&&/ x/.test(d.it.c))g.globalAlpha=.4;
+      const P=[[0,-R],[R*.95,-R*.12],[0,R*.82],[-R*.95,-R*.12]];g.beginPath();P.forEach((p,i)=>i?g.lineTo(p[0],p[1]):g.moveTo(p[0],p[1]));g.closePath();
+      const gr=g.createLinearGradient(0,-R,0,R);gr.addColorStop(0,fill);gr.addColorStop(1,d.landed?fill:'#c9d3ea');g.fillStyle=gr;g.fill();g.strokeStyle='rgba(0,0,0,.28)';g.lineWidth=1.2;g.stroke();
+      g.beginPath();g.moveTo(-R*.95,-R*.12);g.lineTo(0,R*.25);g.lineTo(R*.95,-R*.12);g.moveTo(0,R*.25);g.lineTo(0,R*.82);g.strokeStyle='rgba(0,0,0,.16)';g.stroke();
+      g.fillStyle=ink;g.font=`700 ${Math.round(R*.78)}px Oxanium,sans-serif`;g.textAlign='center';g.textBaseline='middle';g.fillText(String(d.landed?d.it.t:d.shown),0,-R*.12);
+      if(d.landed&&d.it.re){g.font=`700 ${Math.round(R*.36)}px Inter,sans-serif`;g.fillText('re',R*.55,-R*.62)}
+      if(d.landed&&/ x/.test(d.it.c)){g.strokeStyle=ink;g.lineWidth=2;g.beginPath();g.moveTo(-R*.45,-R*.12);g.lineTo(R*.45,-R*.12);g.stroke()}
+      g.restore()}};
+  let last=performance.now(),t=0,flick=0;
+  const step=now=>{let dt=Math.min(.05,(now-last)/1000);last=now;t+=dt;flick+=dt;const sub=4,h=dt/sub;
+    for(let k=0;k<sub;k++){for(const d of ds){if(d.delay>0){d.delay-=h;continue}
+        const damp=Math.exp(-(d.landed?6:1.7)*h);d.vx*=damp;d.vy*=damp;d.va*=Math.exp(-(d.landed?9:2.4)*h);d.x+=d.vx*h;d.y+=d.vy*h;d.a+=d.va*h;
+        if(d.landed){const tg=Math.round(d.a/6.2832)*6.2832;d.a+=(tg-d.a)*Math.min(1,h*7)}
+        if(d.x<R){d.x=R;d.vx=Math.abs(d.vx)*.55;d.va*=-.7}if(d.x>W-R){d.x=W-R;d.vx=-Math.abs(d.vx)*.55;d.va*=-.7}
+        if(d.y<R){d.y=R;d.vy=Math.abs(d.vy)*.55;d.va*=-.7}if(d.y>H-R){d.y=H-R;d.vy=-Math.abs(d.vy)*.55;d.va*=-.7}}
+      for(let i=0;i<ds.length;i++)for(let j=i+1;j<ds.length;j++){const A=ds[i],B=ds[j];if(A.delay>0||B.delay>0)continue;const dx=B.x-A.x,dy=B.y-A.y,dd=Math.hypot(dx,dy)||.01,m=R*1.75;
+        if(dd<m){const nx=dx/dd,ny=dy/dd,ov=(m-dd)/2;A.x-=nx*ov;A.y-=ny*ov;B.x+=nx*ov;B.y+=ny*ov;const rv=(B.vx-A.vx)*nx+(B.vy-A.vy)*ny;
+          if(rv<0){const j2=-(1.6)*rv/2;A.vx-=j2*nx;A.vy-=j2*ny;B.vx+=j2*nx;B.vy+=j2*ny;A.va+=rv*.01;B.va-=rv*.01}}}}
+    if(flick>.07){flick=0;ds.forEach(d=>{if(!d.landed)d.shown=1+Math.floor(Math.random()*10)})}
+    ds.forEach(d=>{if(!d.landed&&d.delay<=0&&(Math.hypot(d.vx,d.vy)<70||t>1.9))d.landed=true});
+    draw();
+    const moving=ds.some(d=>d.delay>0||Math.hypot(d.vx,d.vy)>6||Math.abs(d.va)>.4||(d.landed&&Math.abs(d.a-Math.round(d.a/6.2832)*6.2832)>.05));
+    if(moving&&t<2.6)requestAnimationFrame(step);else{ds.forEach(d=>{d.landed=true;d.a=Math.round(d.a/6.2832)*6.2832});draw();done()}};
+  requestAnimationFrame(step);
+}
+const LSa={get(){let v=null;try{v=localStorage.getItem('ga.anim2')}catch(e){}if(v==='tray'||v==='simple'||v==='off')return v;let rm=false;try{rm=matchMedia('(prefers-reduced-motion: reduce)').matches}catch(e){}return rm?'off':'tray'},set(v){try{localStorage.setItem('ga.anim2',v)}catch(e){}}};
+function roll(){
+  if(rolling)return;
+  const s=calc(),r=()=>1+Math.floor(Math.random()*10);let h=0,cr=0;const items=[];
+  for(let i=0;i<s.dice;i++){const a=r(),o=face(a,s);
+    if(s.ds&&o!=='m'){const b=r(),o2=face(b,s);items.push({t:a,c:o+' x'},{t:b,c:o2==='m'?'':'h',re:1});if(o2!=='m')h++;}
+    else{items.push({t:a,c:o==='m'?'':o});if(o!=='m')h++;if(o==='c')cr++;}}
+  const d=dmg(h,cr,s),trig=!s.ds&&cr>=s.cn,bonus=(!s.ds&&s.cd>0&&cr>=s.cn?s.cd:0)+(!s.ds&&s.pcd>0?Math.min(s.cap,cr*s.pcd):0);
+  const html=it=>`<div class="d ${it.c}">${it.re?'<sup>re</sup>':''}${it.t}</div>`;
+  const finish=()=>{$('ldmg').textContent=d;$('lnum').classList.toggle('kill',d>=s.hp);$('lnum').classList.remove('wait');
+    $('res').innerHTML=`<b>${h}</b> hit${h===1?'':'s'}${cr?` (incl. <b>${cr}</b> crit${cr===1?'':'s'})`:''}${trig?' · crit effect triggers':''}${bonus?` · +${bonus} crit dmg`:''} → <b>${d}</b> damage${d>=s.hp?' · <b>target defeated</b>':''}`;rolling=false;$('rollb').disabled=false};
+  if(!items.length){$('tray').innerHTML='<span class="cres">No dice to roll.</span>';finish();return}
+  const mode=$('anim').value;
+  if(mode==='tray'){rolling=true;$('rollb').disabled=true;$('tray').innerHTML='';$('ldmg').textContent='…';$('lnum').classList.remove('kill');$('lnum').classList.add('wait');$('res').textContent='Rolling…';throwDice(items,finish);return}
+  $('tcan').hidden=true;
+  if(mode==='off'){$('tray').classList.remove('anim');$('tray').innerHTML=items.map(html).join('');finish();return}
+  rolling=true;$('rollb').disabled=true;$('tray').classList.add('anim');
+  $('ldmg').textContent='…';$('lnum').classList.remove('kill');$('lnum').classList.add('wait');$('res').textContent='Rolling…';
+  $('tray').innerHTML=items.map(()=>'<div class="d spin">?</div>').join('');
+  const els=[...$('tray').children],done=new Set();
+  const tick=setInterval(()=>{els.forEach((e,i)=>{if(!done.has(i))e.textContent=r()})},70);
+  items.forEach((it,i)=>setTimeout(()=>{done.add(i);const e=els[i];e.className='d land '+it.c;e.innerHTML=(it.re?'<sup>re</sup>':'')+it.t;
+    if(done.size===items.length){clearInterval(tick);setTimeout(finish,180)}},550+i*Math.min(90,900/items.length)));
+}
+function load(o){
+  $('str').value=o.str;$('up').value=o.up||0;$('sm').value=o.sm||0;$('ct').value=o.ct||9;$('cd').value=o.cd||0;$('pcon').checked=!!o.pcd;$('pcrows').hidden=!o.pcd;$('pcd').value=o.pcd||1;$('cap').value=o.cap||4;$('cn').value=1;$('ds').checked=!!o.dis;
+  $('who').innerHTML=`<b>${esc(o.unit)}</b> · ${esc(o.weapon)} · TL ${esc(o.tl)} · Range ${esc(o.range)} · Strength ${esc(o.str)}${o.up?' +'+o.up+' upgrade'+(o.up>1?'s':''):''}${o.aoe?'<div class="aoe on">'+o.aoe+'<span>Area pattern (grey = attacker, red = hit). Roll once, then check each target here.</span></div>':''}${o.smNote?'<br>'+esc(o.smNote):''}${o.effect?'<br>Effect: '+esc(o.effect):''}${o.crit?'<br>Crit: '+esc(o.crit)+(o.cd||o.pcd?' (bonus damage loaded below)':' (set Damage + below if it adds damage)'):''}${o.effect&&/deactivate all \[?shield/i.test(o.effect)?'<br>Shields set to 0 by this weapon\'s effect.':''}`;
+  if(o.effect&&/deactivate all \[?shield/i.test(o.effect))$('sh').value=0;
+  $('tray').innerHTML='';$('res').textContent='No roll yet.';$('ldmg').textContent='–';$('lnum').classList.remove('kill');calc();
+}
+let fold={};try{fold=JSON.parse(localStorage.getItem('ga.fold')||'{}')}catch(e){}
+const applyFold=()=>document.querySelectorAll('#cf fieldset[data-fold]').forEach(f=>{const shut=!!fold[f.dataset.fold];f.classList.toggle('shut',shut);f.querySelector('.fold').setAttribute('aria-expanded',!shut)});
+document.querySelectorAll('#cf .fold').forEach(b=>b.onclick=()=>{const k=b.closest('fieldset').dataset.fold;fold[k]=!fold[k];try{localStorage.setItem('ga.fold',JSON.stringify(fold))}catch(e){}applyFold()});
+applyFold();
+$('pcon').addEventListener('change',()=>{$('pcrows').hidden=!$('pcon').checked});
+$('cf').addEventListener('input',calc);$('cf').addEventListener('change',calc);
+$('cf').addEventListener('submit',e=>e.preventDefault());
+$('rollb').onclick=roll;$('anim').value=LSa.get();$('anim').onchange=e=>{LSa.set(e.target.value);if(e.target.value!=='tray')$('tcan').hidden=true};
+calc();
+window.GACalc={load};
+})();
+</script>
+<script>
+
+{
+const $=id=>document.getElementById(id);
+const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const LS={get(k,d){try{const v=localStorage.getItem(k);return v?JSON.parse(v):d}catch(e){return d}},set(k,v){try{localStorage.setItem(k,JSON.stringify(v))}catch(e){}}};
+const clone=o=>JSON.parse(JSON.stringify(o));
+const wrap=t=>((t-1)%10+10)%10+1;
+const TYPES=['Ongoing','Command','Response','Attack','Setup'];
+const GRIP='<svg width="14" height="20" viewBox="0 0 14 20" fill="currentColor" aria-hidden="true"><circle cx="4" cy="4" r="1.8"/><circle cx="10" cy="4" r="1.8"/><circle cx="4" cy="10" r="1.8"/><circle cx="10" cy="10" r="1.8"/><circle cx="4" cy="16" r="1.8"/><circle cx="10" cy="16" r="1.8"/></svg>';
+let drag=null;
+const BIN='<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 6h18M8 6V4h8v2M6 6l1 14h10l1-14M10 11v6M14 11v6"/></svg>';
+let units=LS.get('ga.units',{}),game=LS.get('ga.game',{phase:1,me:0,opp:0,squad:[]});
+let open=new Set(),undo=[],confirmK=null,confirmT=0,db=null,uid=null,canEdit=true,ready=false;
+let dirty=false,writing=false,pending=false,timer=0,ed=null;
+const msg=t=>{$('msg').textContent=t};
+
+function fresh(u){return{k:Math.random().toString(36).slice(2,9),u:u.id,hp:u.hp,en:0,sh:0,shOff:0,spd:0,str:0,dis:false,fra:false,slo:false,tl:u.tl||1,dep:false,note:''}}
+function commit(fn){undo.push(JSON.stringify(game));if(undo.length>40)undo.shift();fn();save();render()}
+function save(){LS.set('ga.game',game);if(!db||!uid)return;dirty=true;pending=true;clearTimeout(timer);timer=setTimeout(flush,500)}
+async function flush(){
+  if(writing||!dirty)return;writing=true;dirty=false;
+  try{await db.doc('data/users/'+uid+'/game').set(clone(game));msg('Saved to your account. Opens the same on your iPhone and iPad.')}
+  catch(e){msg('Could not save to your account ('+(e&&e.code||'error')+'). Kept on this device.')}
+  writing=false;if(dirty)flush();else pending=false;
+}
+function saveUnit(u){units[u.id]=u;LS.set('ga.units',units);if(db)db.collection('units').doc(u.id).set(clone(u)).catch(e=>msg('Could not save unit ('+(e&&e.code)+').'))}
+function delUnit(id){delete units[id];LS.set('ga.units',units);if(db)db.collection('units').doc(id).delete().catch(()=>{})}
+function two(key){const now=Date.now();if(confirmK===key&&now-confirmT<4000){confirmK=null;return true}confirmK=key;confirmT=now;render();setTimeout(()=>{if(confirmK===key){confirmK=null;render()}},4000);return false}
+const cf=(key,label,yes)=>confirmK===key?yes:label;
+
+function chips(s,u){
+  const a=[];
+  if(s.en)a.push(`<span class="c en">Energy ${s.en}</span>`);
+  if(s.sh)a.push(`<span class="c sh${s.shOff>=s.sh?' off':''}">Shield ${s.sh-s.shOff}/${s.sh}</span>`);
+  if(s.spd)a.push(`<span class="c sp">Speed +${s.spd}</span>`);
+  if(s.str)a.push(`<span class="c st">Strength +${s.str}</span>`);
+  if(s.dis)a.push('<span class="c dis">Disarm</span>');if(s.fra)a.push('<span class="c fra">Fracture</span>');if(s.slo)a.push('<span class="c slo">Slow</span>');
+  return a.join('')||'<span class="c">No upgrades</span>';
+}
+const ctr=(i,f,label,v)=>`<div class="ctr"><span>${label}</span><button data-act="n" data-i="${i}" data-f="${f}" data-d="-1" aria-label="${label} down">−</button><b>${v}</b><button data-act="n" data-i="${i}" data-f="${f}" data-d="1" aria-label="${label} up">+</button></div>`;
+
+function card(s,i,minTl){
+  const u=units[s.u];
+  if(!u)return`<article class="u" data-k="${s.k}"><div class="hd"><div class="nm"><b>Unit not found</b><small>It was deleted from your unit list</small></div></div><div class="more"><button class="ab warn" data-act="rm" data-i="${i}">${cf('rm'+i,'Remove from squad','Tap again to remove')}</button></div></article>`;
+  const dup=game.squad.filter(x=>x.u===s.u),num=dup.length>1?' #'+(dup.indexOf(s)+1):'';
+  const pct=Math.max(0,s.hp/u.hp*100),isOpen=open.has(s.k),pst=passiveStr(u,s);
+  let h=`<article class="u${s.hp/u.hp<=.3?' low':s.hp/u.hp<=.6?' mid':''}" data-k="${s.k}">
+  <div class="hd"><span class="grip" role="button" tabindex="-1" aria-label="Drag to reorder ${esc(u.name)}">${GRIP}</span><button class="nm" data-act="tog" data-i="${i}" aria-expanded="${isOpen}"><small>${esc([u.model,u.title].filter(Boolean).join(' · '))}</small><b>${esc(u.name)}${num}</b></button>
+<div class="vpb" title="Victory points the opponent scores when this unit is defeated">VP<b>${u.vp}</b></div><div class="tl" title="Starting Timeline from the card">TL<b>${u.tl}</b></div>${confirmK==='rm'+i?`<button class="bin sure" data-act="rm" data-i="${i}" aria-label="Confirm remove ${esc(u.name)}">Remove?</button>`:`<button class="bin" data-act="rm" data-i="${i}" aria-label="Remove ${esc(u.name)} from squad">${BIN}</button>`}</div>
+  <div class="hp"><button data-act="hp" data-i="${i}" data-d="-1" aria-label="HP down">−</button><div class="hv"><b>${s.hp}</b><span> / ${u.hp} HP</span><div class="bar"><i style="width:${pct}%"></i></div></div><button data-act="hp" data-i="${i}" data-d="1" aria-label="HP up">+</button></div>
+  <div class="chips">${pst.n?`<span class="c st">${esc(pst.label)} +${pst.n} Str</span>`+chips(s,u).replace('<span class="c">No upgrades</span>',''):chips(s,u)}</div>
+  ${(u.weapons||[]).length?`<div class="wq">${u.weapons.map((w,j)=>`<button class="wb" data-act="roll" data-i="${i}" data-w="${j}" aria-label="Attack roll with ${esc(w.name)}"><b>${esc(w.name)}</b><span>TL ${esc(w.tl)} · R ${esc(String(w.range).replace(' (area)',''))} · Str ${(+w.str||0)+s.str+pst.n+effStr(w.effect,s)}${pst.n?' ▲':''}</span><i>Roll</i></button>`).join('')}</div>`:''}${u.rws&&s.rwsOn?rwsRow(s,u,i):''}`;
+  if(isOpen){
+    h+=`<div class="more">
+    <div class="ctrs">${ctr(i,'en','Energy',s.en)}${ctr(i,'sh','Shield Upgrades',s.sh)}${ctr(i,'spd','Speed Upgrades',s.spd)}${ctr(i,'str','Strength Upgrades',s.str)}${ctr(i,'shOff','Shields used',s.shOff)}</div>
+    <div class="row">${[['dis','Disarm'],['fra','Fracture'],['slo','Slow']].map(([f,l])=>`<button class="tg" data-act="t" data-i="${i}" data-f="${f}" aria-pressed="${!!s[f]}">${l}</button>`).join('')}</div>
+    <div class="wp">${(u.weapons||[]).map((w,j)=>`<div class="w"><b>${esc(w.name)}</b><div class="st"><span>TL <em>${esc(w.tl)}</em></span><span>Range <em>${esc(w.range)}</em></span><span>Strength <em>${(+w.str||0)+s.str+pst.n+effStr(w.effect,s)}</em>${s.str||pst.n||effStr(w.effect,s)?` (${[esc(w.str)+' base',s.str?'+'+s.str+' upgrades':'',pst.n?'+'+pst.n+' '+pst.label:'',effStr(w.effect,s)?'+'+effStr(w.effect,s)+' effect':''].filter(Boolean).join(' ')})`:''}</span></div>${w.effect?`<p><span class="tag" style="background:var(--blue)">Effect</span>${esc(w.effect)}</p>`:''}${Array.isArray(w.aoe)&&w.aoe.length?`<div class="aoe">${aoeSvg(w.aoe)}<span>Area pattern: grey = this unit, red = hexes hit. Place it in any direction around the unit.</span></div>`:''}${w.crit?`<p><span class="tag">Critical</span>${esc(w.crit)}</p>`:''}</div>`).join('')}
+    ${(u.abilities||[]).map(a=>`<div class="w">${isDep(u,a)?`<button class="skb${s.rwsOn?' on':''}" data-act="rwsdep" data-i="${i}"><b>${esc(a.name)}</b><i>${s.rwsOn?'✓ '+esc(u.rws.name)+' on screen · tap to reposition':'＋ Tap to add '+esc(u.rws.name)}</i></button>`:`<b>${esc(a.name)}</b>`}<p>${typeTag(a.type)}${a.energy?`<span class="tag" style="background:var(--yel);color:#211a00">Energy ${esc(a.energy)}</span>`:''}${esc(a.text)}</p></div>`).join('')}
+    ${u.rws?`<div class="w rwsd"><b>${esc(u.rws.name)}</b> <span class="tag" style="background:#5b6b8a">RWS · HP ${u.rws.hp} · VP ${u.rws.vp}</span>${(u.rws.abilities||[]).map(a=>`<p>${typeTag(a.type)}<b style="font-size:13px">${esc(a.name)}</b> ${esc(a.text)}</p>`).join('')}</div>`:''}
+    ${u.notes?`<div class="w"><p>${esc(u.notes)}</p></div>`:''}
+    ${u.traits&&u.traits.length?`<div class="st">${u.traits.map(t=>`<span>${esc(t)}</span>`).join('')}</div>`:''}</div>
+    <textarea data-act="note" data-i="${i}" placeholder="Notes (attached Tactics card, temporary buffs…)" aria-label="Notes">${esc(s.note)}</textarea>
+    </div>`;
+  }
+  return h+'</article>';
+}
+function render(){
+  if(drag)return;
+  $('vme').value=String(Math.min(99,game.me));$('vop').value=String(Math.min(99,game.opp));$('vph').textContent=game.phase;
+  $('undo').disabled=!undo.length;$('undo').style.opacity=undo.length?1:.4;
+  $('ng').textContent=cf('ng','New game','Tap again: reset HP & tokens');$('ng').classList.toggle('sure',confirmK==='ng');
+  $('clr').textContent=cf('clr','Clear all','Tap again: remove all units');$('clr').classList.toggle('sure',confirmK==='clr');
+  const minTl=Math.min(...game.squad.map(s=>units[s.u]?units[s.u].tl:99));
+  $('list').innerHTML=game.squad.length?game.squad.map((s,i)=>card(s,i,minTl)).join(''):
+    `<p class="empty">${ready?'No units yet. Tap “Add unit to squad” to build your 3 or 5 unit squad.':'Loading your squad…'}</p>`;
+}
+
+const SETS={ST01:'Starter Set 01 (ST01)',PA01:'PA01',EX01:'Expansion Pack 01 (EX01)',EX02:'Expansion Pack 02 (EX02)'};
+const setOf=u=>(String(u.code||'').split('-')[0]||'').toUpperCase();
+let selId=null;
+const ORD=['ST01','PA01','EX01','EX02'],rank=u=>{const i=ORD.indexOf(setOf(u));return i<0?(setOf(u)?50:99):i};
+function sorted(){return Object.values(units).sort((a,b)=>rank(a)-rank(b)||String(a.code||'zz').localeCompare(String(b.code||'zz'))||a.name.localeCompare(b.name))}
+function preview(){
+  const u=units[selId];if(!u){$('uprev').innerHTML='';return}
+  $('uprev').innerHTML=`<b>${esc(u.name)}</b><div class="st"><span>HP <em>${u.hp}</em></span><span>VP <em>${u.vp}</em></span><span>TL <em>${u.tl}</em></span>${(u.weapons||[]).map(w=>`<span>${esc(w.name)} <em>${esc(w.tl)}/${esc(w.range)}/${esc(w.str)}</em></span>`).join('')}</div><p>${esc([u.title,...(u.traits||[])].filter(Boolean).join(' · '))}</p>`;
+}
+function pick(){
+  const list=sorted(),groups={};
+  list.forEach(u=>{const s=setOf(u),g=SETS[s]||(s?s:'Your own units');(groups[g]=groups[g]||[]).push(u)});
+  if(!units[selId])selId=list[0]&&list[0].id;
+  $('pane').innerHTML=`<h2>Add a unit<button class="ab" data-act="close">Close</button></h2>
+  ${list.length?`<label class="f">Choose a unit<select id="usel">${Object.entries(groups).map(([g,us])=>`<optgroup label="${esc(g)}">${us.map(u=>`<option value="${esc(u.id)}"${u.id===selId?' selected':''}>${esc(u.name)}${u.title?' · '+esc(u.title):''}</option>`).join('')}</optgroup>`).join('')}</select></label>
+  <div class="w" id="uprev"></div>
+  <button class="ab pri" data-act="addsel" style="width:100%;margin-top:8px">Add to squad</button>`:'<p class="empty">Your unit list is empty.</p>'}
+  ${canEdit?`<details style="margin-top:16px"><summary style="min-height:44px;display:flex;align-items:center;font-weight:600">Edit unit cards</summary>
+  ${list.map(u=>`<div class="pick"><button class="ab" data-act="edit" data-id="${esc(u.id)}">${esc(u.name)}<small>${esc(u.code||'')} ${esc(u.title||'')}</small></button></div>`).join('')}
+  <button class="ab pri" data-act="edit" style="width:100%">New unit card</button></details>`:''}`;
+  $('sheet').hidden=false;if(list.length)preview();
+}
+function editor(){
+  const f=(k,l,t='text')=>`<label class="f">${l}<input type="${t}" ${t==='number'?'inputmode="numeric"':''} data-e="${k}" value="${esc(k.split('.').reduce((o,p)=>o&&o[p],ed))}"></label>`;
+  $('pane').innerHTML=`<h2>${units[ed.id]?'Edit unit':'New unit'}<button class="ab" data-act="close">Cancel</button></h2>
+  ${f('name','Unit name')}<div class="g3">${f('hp','HP','number')}${f('vp','VP','number')}${f('tl','Start TL','number')}</div>
+  <div class="g3">${f('model','Model no.')}${f('title','Signature title')}${f('code','Card no.')}</div>
+  <label class="f">Traits (comma separated)<input data-e="traitsTxt" value="${esc(ed.traitsTxt)}"></label>
+  <label class="f">Card notes<textarea data-e="notes" rows="2">${esc(ed.notes)}</textarea></label>
+  ${ed.weapons.map((w,j)=>`<div class="box">${f(`weapons.${j}.name`,'Weapon '+(j+1))}<div class="g3">${f(`weapons.${j}.tl`,'TL','number')}${f(`weapons.${j}.range`,'Range')}${f(`weapons.${j}.str`,'Strength','number')}</div>${f(`weapons.${j}.effect`,'Weapon effect (every attack)')}${f(`weapons.${j}.crit`,'Critical effect')}<button class="ab" data-act="delw" data-j="${j}">Remove weapon</button></div>`).join('')}
+  <button class="ab" data-act="addw">Add weapon</button>
+  ${ed.abilities.map((a,j)=>`<div class="box">${f(`abilities.${j}.name`,'Ability '+(j+1))}<div class="g3"><label class="f">Type<select data-e="abilities.${j}.type">${TYPES.map(t=>`<option${t===a.type?' selected':''}>${t}</option>`).join('')}</select></label>${f(`abilities.${j}.energy`,'Energy cost','number')}</div><label class="f">Effect<textarea data-e="abilities.${j}.text" rows="3">${esc(a.text)}</textarea></label><button class="ab" data-act="dela" data-j="${j}">Remove ability</button></div>`).join('')}
+  <button class="ab" data-act="adda">Add ability</button>
+  <div class="row" style="margin-top:12px"><button class="ab pri" data-act="saveu">Save unit</button>${units[ed.id]?`<button class="ab warn" data-act="delu">${cf('delu','Delete unit','Tap again to delete')}</button>`:''}</div>`;
+}
+function critBonus(t,s){t=String(t||'');let m;
+  if((m=t.match(/damage\s*\+\s*(\d+)\]?\s*for each\s*\[?crit\]?\s*rolled(?:[^(]*\(max\.?\s*\+(\d+)\))?/i)))return{pcd:+m[1],cap:m[2]?+m[2]:10,cd:0};
+  if((m=t.match(/damage\s*\+\s*(\d+)\]?\s*for each\s*\[?(shield|speed|strength)?\]?\s*upgrade[^(]*(?:\(max\.?\s*\+(\d+)\))?/i))){const k=(m[2]||'').toLowerCase(),n=k==='shield'?s.sh:k==='speed'?s.spd:k==='strength'?s.str:s.sh+s.spd+s.str;return{cd:Math.min(m[3]?+m[3]:10,n*+m[1]),pcd:0,cap:4}}
+  if((m=t.match(/damage\s*\+\s*(\d+)/i)))return{cd:+m[1],pcd:0,cap:4};
+  return{cd:0,pcd:0,cap:4};
+}
+const TICO={Ongoing:'<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" aria-hidden="true"><path d="M20 12a8 8 0 1 1-2.3-5.7M20 4v5h-5"/></svg>',Response:'›',Command:'',Attack:'',Setup:''};
+const typeTag=t=>`<span class="tag ty-${esc(String(t||'').toLowerCase())}">${TICO[t]||''}${esc(t)}</span>`;
+function aoeSvg(cells,sz){sz=sz||11;const pts=[[0,0,'a'],...(cells||[]).map(c=>[+c[0]|0,+c[1]|0,'t'])];const qs=pts.map(p=>p[0]),vs=pts.map(p=>p[1]);
+  const q0=Math.min(...qs)-1,q1=Math.max(...qs)+1,v0=Math.min(...vs)-2,v1=Math.max(...vs)+2,h=Math.sqrt(3)/2*sz,pad=2,set=new Map(pts.map(p=>[p[0]+','+p[1],p[2]]));
+  const W=(q1-q0)*1.5*sz+2*sz+2*pad,H=(v1-v0)*h+2*h+2*pad;let o='';
+  for(let q=q0;q<=q1;q++)for(let v=v0;v<=v1;v++){if(((q+v)%2+2)%2)continue;const cx=(q-q0)*1.5*sz+sz+pad,cy=(v-v0)*h+h+pad,k=set.get(q+','+v);
+    const pt=[0,1,2,3,4,5].map(i=>{const a=Math.PI/3*i;return (cx+sz*.94*Math.cos(a)).toFixed(1)+','+(cy+sz*.94*Math.sin(a)).toFixed(1)}).join(' ');
+    o+=`<polygon points="${pt}" fill="${k==='t'?'#c8102e':k==='a'?'#6b7280':'var(--soft)'}" stroke="${k?'none':'var(--line)'}"/>`}
+  return `<svg class="aoesvg" viewBox="0 0 ${W.toFixed(0)} ${H.toFixed(0)}" width="${W.toFixed(0)}" height="${H.toFixed(0)}" role="img" aria-label="Area pattern: ${pts.length-1} hexes">${o}</svg>`}
+function isDep(u,a){return!!(u.rws&&a&&String(a.name).toLowerCase().includes(String(u.rws.name).toLowerCase()))}
+function rwsRow(s,u,i){const r=u.rws,hp=s.rwsHp==null?r.hp:s.rwsHp;
+  return s.rwsOn?`<div class="rws on"><span class="rn"><b>${esc(r.name)}</b><small>Deployed</small></span><button class="rb2" data-act="rwshp" data-i="${i}" data-d="-1" aria-label="${esc(r.name)} HP down">−</button><span class="rh">${hp}/${r.hp} HP</span><button class="rb2" data-act="rwshp" data-i="${i}" data-d="1" aria-label="${esc(r.name)} HP up">+</button><button class="rb2 wide" data-act="rws" data-i="${i}">Return</button></div>`
+  :`<div class="rws"><span class="rn"><b>${esc(r.name)}</b><small>RWS · in supply</small></span><button class="rb2 wide dep" data-act="rws" data-i="${i}">Deploy</button></div>`}
+function passiveStr(u,s){const taken=u.hp-s.hp;if((u.abilities||[]).some(x=>/fight to the end/i.test(x.name))){const n=taken>=12?2:taken>=6?1:0;return{n,label:'Fight to the End'}}return{n:0,label:''}}
+function effStr(t,s){const m=String(t||'').match(/strength\s*\+\s*(\d+)\]?\s*for each\s*\[?(shield|speed|strength)\]?\s*upgrade/i);if(!m)return 0;const k=m[2].toLowerCase();return +m[1]*(k==='shield'?s.sh:k==='speed'?s.spd:s.str)}
+function setPath(o,path,v){const ps=path.split('.');let t=o;for(let i=0;i<ps.length-1;i++)t=t[ps[i]];t[ps.at(-1)]=v}
+
+document.addEventListener('click',e=>{
+  const b=e.target.closest('[data-act]');if(!b||b.tagName==='TEXTAREA')return;
+  const a=b.dataset.act,i=+b.dataset.i,s=game.squad[i],d=+b.dataset.d,f=b.dataset.f;
+  const u=s&&units[s.u];
+  switch(a){
+  case'vp':commit(()=>{game[f]=Math.max(0,Math.min(99,game[f]+d))});break;
+  case'ph':commit(()=>{game.phase=Math.min(4,Math.max(1,game.phase+d))});break;
+  case'undo':if(undo.length){game=JSON.parse(undo.pop());save();render()}break;
+  case'tog':open.has(s.k)?open.delete(s.k):open.add(s.k);render();break;
+  case'hp':commit(()=>{s.hp=Math.max(0,Math.min(u.hp,s.hp+d))});if(s.hp===0)msg(u.name+' is at 0 HP (defeated).');break;
+  case'n':commit(()=>{
+    if(f==='tl')s.tl=wrap(s.tl+d);
+    else{const max={en:9,sh:5,spd:5,str:9,shOff:s.sh}[f];s[f]=Math.max(0,Math.min(max,s[f]+d));if(f==='sh')s.shOff=Math.min(s.shOff,s.sh)}
+  });break;
+  case't':commit(()=>{s[f]=!s[f]});break;
+  case'rm':if(two('rm'+i))commit(()=>{open.delete(s.k);game.squad.splice(i,1)});break;
+  case'newgame':if(two('ng')){commit(()=>{game.me=0;game.opp=0;game.phase=1;game.squad=game.squad.map(x=>units[x.u]?Object.assign(fresh(units[x.u]),{k:x.k}):x)});msg('New game: same squad, HP, tokens, VP and Phase reset.')}break;
+  case'clear':if(two('clr')){commit(()=>{game.me=0;game.opp=0;game.phase=1;game.squad=[]});open.clear();msg('Everything cleared. Tap Undo if that was a mistake.')}break;
+  case'view':show(b.dataset.v);break;
+  case'roll':{const w=(u.weapons||[])[+b.dataset.w];if(!w||!window.GACalc)break;
+    const cb=critBonus(w.crit,s),taken=u.hp-s.hp,fte=passiveStr(u,s).n,es=effStr(w.effect,s),notes=[fte?'Fight to the End: Strength +'+fte+' ('+taken+' damage taken)':'',es?'Weapon effect: Strength +'+es+' from Upgrades':''].filter(Boolean);GACalc.load({sm:fte+es,smNote:notes.join(' · '),unit:u.name,weapon:w.name,tl:w.tl,range:w.range,str:+w.str||0,up:s.str,dis:s.dis,crit:w.crit,effect:w.effect,aoe:Array.isArray(w.aoe)&&w.aoe.length?aoeSvg(w.aoe,9):'',cd:cb.cd,pcd:cb.pcd,cap:cb.cap,ct:(u.abilities||[]).some(x=>/zero system/i.test(x.name))?7:9});
+    if(wideMQ.matches){$('calc').scrollTop=0}else{show('attack');window.scrollTo(0,0)}}break;
+  case'rws':{const r=u&&u.rws;if(!r)break;commit(()=>{if(s.rwsOn){s.rwsOn=false}else{s.rwsOn=true;s.rwsHp=r.hp}});msg(r.name+(s.rwsOn?' deployed.':' returned to supply.'))}break;
+  case'rwsdep':{const r=u&&u.rws;if(!r)break;const rv=(r.abilities||[]).find(x=>/deployed or repositioned/i.test(x.text));if(s.rwsOn){msg(r.name+' repositioned.'+(rv?' '+rv.name+': '+rv.text.replace(/^After this is deployed or repositioned:\s*/i,''):''))}else{commit(()=>{s.rwsOn=true;s.rwsHp=r.hp});msg(r.name+' deployed — added to your screen.'+(rv?' '+rv.name+': '+rv.text.replace(/^After this is deployed or repositioned:\s*/i,''):''))}}break;
+  case'rwshp':{const r=u&&u.rws;if(!r)break;commit(()=>{const cur=s.rwsHp==null?r.hp:s.rwsHp;s.rwsHp=Math.max(0,Math.min(r.hp,cur+d));if(s.rwsHp===0){s.rwsOn=false;s.rwsHp=r.hp}});if(!s.rwsOn)msg(r.name+' destroyed → back to supply. Opponent scores '+r.vp+' VP.')}break;
+  case'pick':pick();break;
+  case'close':$('sheet').hidden=true;ed=null;break;
+  case'addsel':
+  case'add':{const un=units[a==='addsel'?selId:b.dataset.id];if(un){commit(()=>{game.squad.push(fresh(un))});$('sheet').hidden=true;msg(un.name+' added.')}}break;
+  case'edit':{const un=units[b.dataset.id];ed=un?clone(un):{name:'',hp:10,vp:5,tl:2,model:'',title:'',code:'',traits:[],weapons:[{name:'',tl:2,range:'1',str:4,crit:''}],abilities:[]};ed.traitsTxt=(ed.traits||[]).join(', ');ed.weapons=ed.weapons||[];ed.abilities=ed.abilities||[];editor();$('pane').scrollTop=0}break;
+  case'addw':ed.weapons.push({name:'',tl:2,range:'1',str:4,effect:'',crit:''});editor();break;
+  case'delw':ed.weapons.splice(+b.dataset.j,1);editor();break;
+  case'adda':ed.abilities.push({name:'',type:'Command',energy:'',text:''});editor();break;
+  case'dela':ed.abilities.splice(+b.dataset.j,1);editor();break;
+  case'saveu':{
+    if(!String(ed.name).trim()){msg('Give the unit a name first.');return}
+    const out={id:ed.id||(String(ed.name).toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/^-|-$/g,'').slice(0,40)||'unit')+'-'+Math.random().toString(36).slice(2,6),
+      name:String(ed.name).trim(),model:ed.model||'',title:ed.title||'',code:ed.code||'',hp:Math.max(1,+ed.hp||1),vp:Math.max(0,+ed.vp||0),tl:wrap(+ed.tl||1),
+      notes:ed.notes||'',traits:String(ed.traitsTxt||'').split(',').map(t=>t.trim()).filter(Boolean),
+      weapons:ed.weapons.filter(w=>String(w.name).trim()).map(w=>({name:w.name,tl:+w.tl||0,range:String(w.range||''),str:+w.str||0,effect:w.effect||'',crit:w.crit||'',...(Array.isArray(w.aoe)?{aoe:w.aoe}:{})})),
+      abilities:ed.abilities.filter(x=>String(x.name).trim()).map(x=>({name:x.name,type:x.type||'Command',energy:x.energy===''?'':+x.energy||'',text:x.text||''}))};
+    saveUnit(out);ed=null;pick();render();msg(out.name+' saved to your unit list.')}break;
+  case'delu':if(confirmK==='delu'){confirmK=null;delUnit(ed.id);ed=null;pick();render()}else{confirmK='delu';editor()}break;
+  }
+});
+document.addEventListener('input',e=>{const k=e.target.dataset.e;if(k&&ed)setPath(ed,k,e.target.value)});
+document.addEventListener('change',e=>{const t=e.target;if(t.id==='vme'||t.id==='vop'){const f=t.id==='vme'?'me':'opp',v=+t.value;if(game[f]!==v)commit(()=>{game[f]=v});return}if(t.id==='usel'){selId=t.value;preview();return}if(t.dataset.e&&ed)setPath(ed,t.dataset.e,t.value);if(t.dataset.act==='note'){const s=game.squad[+t.dataset.i];if(s&&s.note!==t.value)commit(()=>{s.note=t.value})}});
+$('list').addEventListener('pointerdown',e=>{
+  const g=e.target.closest('.grip');if(!g||game.squad.length<2)return;
+  e.preventDefault();const art=g.closest('article');
+  drag={art,id:e.pointerId,before:[...$('list').children].map(x=>x.dataset.k).join()};
+  art.classList.add('drag');try{g.setPointerCapture(e.pointerId)}catch(_){}
+});
+document.addEventListener('pointermove',e=>{
+  if(!drag||e.pointerId!==drag.id)return;e.preventDefault();
+  if(e.clientY<70)window.scrollBy(0,-12);else if(e.clientY>window.innerHeight-70)window.scrollBy(0,12);
+  const el=document.elementFromPoint(e.clientX,e.clientY),over=el&&el.closest('#list article.u');
+  if(!over||over===drag.art)return;
+  const kids=[...$('list').children];kids.indexOf(drag.art)<kids.indexOf(over)?over.after(drag.art):over.before(drag.art);
+},{passive:false});
+const endDrag=e=>{
+  if(!drag||e.pointerId!==drag.id)return;
+  const d=drag;drag=null;d.art.classList.remove('drag');
+  const order=[...$('list').children].map(x=>x.dataset.k);
+  if(order.join()!==d.before)commit(()=>{game.squad=order.map(k=>game.squad.find(s=>s.k===k)).filter(Boolean)});else render();
+};
+document.addEventListener('pointerup',endDrag);document.addEventListener('pointercancel',endDrag);
+$('sheet').addEventListener('click',e=>{if(e.target.id==='sheet'){$('sheet').hidden=true;ed=null}});
+
+const wideMQ=window.matchMedia?matchMedia('(min-width: 1000px)'):{matches:false};
+function show(v){
+  v=v==='attack'?'attack':'squad';$('squadv').hidden=v!=='squad';$('calc').hidden=v!=='attack';
+  document.querySelectorAll('.tabs button').forEach(t=>t.setAttribute('aria-pressed',t.dataset.v===v));
+  if(location.hash.slice(1)!==v){try{history.replaceState(null,'','#'+v)}catch(e){location.hash=v}}
+}
+window.addEventListener('hashchange',()=>show(location.hash.slice(1)));
+show(location.hash.slice(1));
+render();
+(async()=>{
+  const C=window.claude;
+  const [d,us]=C&&C.use?await Promise.all([C.use('db'),C.use('user')]):[null,null];
+  db=d;
+  if(us){try{uid=await us.id()}catch(e){}try{canEdit=(await us.canEdit())!==false}catch(e){}}
+  if(!db){ready=true;render();msg('Saved on this device only.');return}
+  let gotUnits=false,gotGame=!uid;
+  const lt=setTimeout(()=>{if(!gotUnits||!gotGame){ready=true;render();msg('Can’t reach your saved data yet; showing what this device last had.')}},10000);
+  const done=()=>{if(gotUnits&&gotGame){clearTimeout(lt);ready=true;render()}};
+  db.collection('units').onSnapshot(snap=>{
+    const m={};snap.docs.forEach(x=>{const v=x.data();if(v&&v.name)m[x.id]=Object.assign({},v,{id:x.id})});
+    units=m;LS.set('ga.units',units);if(!snap.metadata.fromCache)gotUnits=true;done();render();
+    if(!$('sheet').hidden&&!ed)pick();
+  },err=>{gotUnits=true;done();msg('Unit list unavailable ('+err.code+').')});
+  if(uid){
+    db.doc('data/users/'+uid+'/game').onSnapshot(snap=>{
+      if(pending||snap.metadata.hasPendingWrites)return;
+      if(snap.exists){const v=snap.data();if(v&&Array.isArray(v.squad)){game=clone(v);LS.set('ga.game',game)}}
+      else if(!snap.metadata.fromCache&&game.squad.length)save();
+      if(!snap.metadata.fromCache)gotGame=true;done();render();
+    },err=>{gotGame=true;done();msg('Game save unavailable ('+err.code+'). Kept on this device.')});
+  }else msg('Not signed in: game kept on this device only.');
+})();
+}
+</script>
+</body>
+</html>

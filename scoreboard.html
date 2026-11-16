@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>GA Scoreboard</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Oxanium:wght@500;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+/* VOICE: arena scoreboard, readable from across the store.
+   IDEA: a match-day board for a Gundam Assemble table.
+   PICTURE: two huge VP numbers in player colours with Phase and Round between them.
+   COLOUR and TYPE: navy board, blue vs red players, yellow round; Oxanium + Inter.
+   LAYOUT: landscape three columns; stacks on a portrait phone. */
+:root{color-scheme:dark;--bg:#0b1630;--ink:#fff;--mute:rgba(255,255,255,.7);--p1:#5b9bff;--p2:#ff6b6b;--yel:#ffd400;--panel:rgba(255,255,255,.07)}
+*{box-sizing:border-box;min-width:0}
+html,body{height:100%}
+body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.4 Inter,system-ui,sans-serif;overflow-x:clip;-webkit-tap-highlight-color:transparent}
+button,input{font:inherit;color:inherit;touch-action:manipulation}
+button{cursor:pointer}
+:focus-visible{outline:3px solid var(--yel);outline-offset:2px}
+.board{min-height:100vh;min-height:100dvh;display:grid;grid-template-rows:1fr auto;padding:clamp(10px,2vw,24px);gap:12px}
+.main{display:grid;grid-template-columns:minmax(0,1fr) auto minmax(0,1fr);align-items:center;gap:clamp(10px,3vw,40px)}
+.pl{display:grid;justify-items:center;text-align:center;gap:6px;padding:clamp(8px,2vw,20px);border-radius:20px;background:var(--panel);border-top:6px solid var(--c)}
+.p1{--c:var(--p1)}.p2{--c:var(--p2)}
+.nm{width:100%;background:none;border:0;border-bottom:2px dashed transparent;text-align:center;font:700 clamp(28px,5.5vw,72px)/1.1 Oxanium,sans-serif;color:var(--c);padding:2px 4px}
+.nm:focus{border-bottom-color:var(--c);outline:none}
+.vp{font:700 clamp(96px,21vw,300px)/.9 Oxanium,sans-serif;font-variant-numeric:tabular-nums}
+.vpl{font-size:clamp(14px,1.6vw,22px);color:var(--mute);letter-spacing:.04em}
+.btns{display:flex;gap:8px;flex-wrap:wrap;justify-content:center}
+.b{min-width:56px;height:52px;padding:0 14px;border-radius:12px;border:0;background:rgba(255,255,255,.14);font:700 20px Oxanium,sans-serif}
+.b.add{background:var(--c);color:#06122a}
+.mid{display:grid;justify-items:center;gap:clamp(8px,2vh,22px);text-align:center}
+.lbl{font-size:clamp(13px,1.5vw,20px);color:var(--mute)}
+.ph{font:700 clamp(28px,4vw,56px)/1 Oxanium,sans-serif}
+.rd{font:700 clamp(56px,9vw,130px)/.9 Oxanium,sans-serif;color:var(--yel)}
+.track{display:grid;grid-template-columns:repeat(10,1fr);gap:4px;width:clamp(180px,24vw,340px)}
+.track i{height:12px;border-radius:3px;background:rgba(255,255,255,.18)}
+.track i.done{background:rgba(255,212,0,.45)}.track i.on{background:var(--yel)}
+.sm{display:flex;gap:6px}
+.sm .b{min-width:48px;height:46px;font-size:18px}
+.next{height:52px;padding:0 18px;border-radius:12px;border:0;background:var(--yel);color:#2a2100;font:700 18px Oxanium,sans-serif}
+.foot{display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap;color:var(--mute);font-size:14px}
+.foot .b{height:44px;font:600 14px Inter,sans-serif}
+.foot .b.sure{background:var(--yel);color:#2a2100}
+#face{display:none}
+body.show .ctl{display:none!important}
+body.show .nm{pointer-events:none}
+.peek{display:none;position:fixed;right:10px;bottom:10px;width:56px;height:56px;border-radius:50%;border:0;background:rgba(255,255,255,.12)}
+body.show .peek{display:block}
+
+@media(max-width:760px) and (orientation:portrait){
+.board{height:100vh;height:100dvh;min-height:0;padding:8px;gap:6px;grid-template-rows:minmax(0,1fr) auto}
+.main{grid-template-columns:minmax(0,1fr);grid-template-rows:minmax(0,1fr) auto minmax(0,1fr);gap:6px;min-height:0;align-items:stretch}
+.pl{gap:2px;padding:6px 8px;border-radius:16px;align-content:center;min-height:0}
+.nm{font-size:clamp(24px,7vw,40px)}
+.vp{font-size:clamp(72px,16vh,190px)}
+.vpl{font-size:12px}
+.b{height:44px;min-width:50px;font-size:18px}
+.mid{grid-template-columns:auto auto 1fr;grid-template-areas:"ph rd nx" "ph tr nx";align-items:center;justify-items:center;gap:4px 10px;padding:4px 6px}
+.mid>div:nth-child(1){grid-area:ph}.mid>.sm:nth-child(2){display:none}
+.mid>div:nth-child(3){grid-area:rd;display:flex;align-items:baseline;gap:6px}
+.track{grid-area:tr;width:120px}.track i{height:8px}
+.mid>.sm:last-child{grid-area:nx;justify-self:end}
+.ph{font-size:22px}.rd{font-size:44px}.lbl{font-size:12px}
+.next{height:44px;font-size:16px;padding:0 12px}
+.foot{font-size:12px}.foot>span:first-child{display:none}.foot>span:last-child{width:100%;justify-content:space-between}
+.foot .b{height:40px;flex:1;font-size:13px}
+body.show .board{grid-template-rows:minmax(0,1fr)}
+body.face:not(.show) .p2{order:-2;transform:rotate(180deg)}
+body.face:not(.show) .mid{order:-1}
+#face{display:inline-flex;align-items:center}
+body.show .vp{font-size:clamp(90px,22vh,240px)}
+}
+@media(prefers-reduced-motion:no-preference){.vp,.rd{transition:transform .15s}.bump{transform:scale(1.08)}}
+</style>
+</head>
+<body>
+<div class="board">
+ <div class="main">
+  <section class="pl p1" aria-label="Player 1">
+   <input class="nm" id="n1" value="Player 1" aria-label="Player 1 name" maxlength="18">
+   <div class="vp" id="v1">0</div><div class="vpl">VP</div>
+   <div class="btns ctl"><button class="b" data-p="1" data-d="-1" aria-label="Player 1 minus 1">−1</button><button class="b add" data-p="1" data-d="1">+1</button><button class="b add" data-p="1" data-d="2">+2</button><button class="b add" data-p="1" data-d="5">+5</button></div>
+  </section>
+  <section class="mid" aria-label="Phase and round">
+   <div><div class="lbl">Phase</div><div class="ph" id="ph" role="button" tabindex="0" title="Tap to change phase">1 of 2</div></div>
+   <div class="sm ctl"><button class="b" id="phm" aria-label="Phase down">−</button><button class="b" id="php" aria-label="Phase up">+</button></div>
+   <div><div class="lbl">Round</div><div class="rd" id="rd">1</div></div>
+   <div class="track" id="trk" aria-hidden="true"></div>
+   <div class="sm ctl"><button class="b" id="rdm" aria-label="Round down">−</button><button class="next" id="rdp">Next round</button></div>
+  </section>
+  <section class="pl p2" aria-label="Player 2">
+   <input class="nm" id="n2" value="Player 2" aria-label="Player 2 name" maxlength="18">
+   <div class="vp" id="v2">0</div><div class="vpl">VP</div>
+   <div class="btns ctl"><button class="b" data-p="2" data-d="-1" aria-label="Player 2 minus 1">−1</button><button class="b add" data-p="2" data-d="1">+1</button><button class="b add" data-p="2" data-d="2">+2</button><button class="b add" data-p="2" data-d="5">+5</button></div>
+  </section>
+ </div>
+ <div class="foot ctl">
+  <span>Tap a name to change it. +2 = Garrison defeated or rescued.</span>
+  <span style="display:flex;gap:8px"><button class="b" id="face">Face-to-face</button><button class="b" id="undo">Undo</button><button class="b" id="reset">New match</button><button class="b" id="disp" style="background:var(--yel);color:#2a2100">Display mode</button></span>
+ </div>
+</div>
+<button class="peek" id="peek" aria-label="Show controls"></button>
+<script>
+{
+const $=id=>document.getElementById(id);
+const K='ga.scoreboard';
+const fresh=()=>({n1:'Player 1',n2:'Player 2',v1:0,v2:0,ph:1,rd:1});
+let st=fresh(),hist=[],sure=false,sureT=0;
+try{const v=JSON.parse(localStorage.getItem(K));if(v&&typeof v==='object')st=Object.assign(fresh(),v)}catch(e){}
+const save=()=>{try{localStorage.setItem(K,JSON.stringify(st))}catch(e){}};
+const push=()=>{hist.push(JSON.stringify(st));if(hist.length>60)hist.shift()};
+const bump=el=>{el.classList.add('bump');setTimeout(()=>el.classList.remove('bump'),160)};
+function render(){
+  $('n1').value=st.n1;$('n2').value=st.n2;$('v1').textContent=st.v1;$('v2').textContent=st.v2;
+  $('ph').textContent=st.ph+' of 2';$('rd').textContent=st.rd;
+  $('trk').innerHTML=Array.from({length:10},(_,i)=>`<i class="${i+1<st.rd?'done':i+1===st.rd?'on':''}"></i>`).join('');
+  $('undo').style.opacity=hist.length?1:.4;
+  $('reset').textContent=sure?'Tap again to reset':'New match';$('reset').classList.toggle('sure',sure);
+}
+document.querySelectorAll('[data-p]').forEach(b=>b.onclick=()=>{const k='v'+b.dataset.p,d=+b.dataset.d;push();st[k]=Math.max(0,Math.min(999,st[k]+d));save();render();bump($(k))});
+$('php').onclick=()=>{push();st.ph=Math.min(4,st.ph+1);save();render()};
+$('phm').onclick=()=>{push();st.ph=Math.max(1,st.ph-1);save();render()};
+$('rdp').onclick=()=>{push();if(st.rd>=10){if(st.ph<4){st.ph++;st.rd=1}}else st.rd++;save();render();bump($('rd'))};
+$('rdm').onclick=()=>{push();if(st.rd<=1){if(st.ph>1){st.ph--;st.rd=10}}else st.rd--;save();render()};
+['n1','n2'].forEach(k=>$(k).addEventListener('change',()=>{const v=$(k).value.trim()||(k==='n1'?'Player 1':'Player 2');if(v!==st[k]){push();st[k]=v;save()}render()}));
+$('undo').onclick=()=>{if(hist.length){st=JSON.parse(hist.pop());save();render()}};
+$('reset').onclick=()=>{const now=Date.now();if(sure&&now-sureT<4000){push();st=Object.assign(fresh(),{n1:st.n1,n2:st.n2});sure=false;save();render();return}sure=true;sureT=now;render();setTimeout(()=>{if(sure&&Date.now()-sureT>=4000){sure=false;render()}},4100)};
+$('ph').onclick=()=>{if(document.body.classList.contains('show'))return;push();st.ph=st.ph>=2?1:st.ph+1;save();render()};
+let face=true;try{const f=localStorage.getItem('ga.face');if(f!==null)face=f==='1'}catch(e){}
+const applyFace=()=>{document.body.classList.toggle('face',face);$('face').textContent=face?'Flip: on':'Flip: off';$('face').style.background=face?'var(--p2)':'';$('face').style.color=face?'#06122a':''};
+$('face').onclick=()=>{face=!face;try{localStorage.setItem('ga.face',face?'1':'0')}catch(e){}applyFace()};
+applyFace();
+$('disp').onclick=()=>{document.body.classList.add('show')};
+$('peek').onclick=()=>{document.body.classList.remove('show')};
+render();
+}
+</script>
+</body>
+</html>
