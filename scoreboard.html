@@ -49,7 +49,49 @@ body.show .nm{pointer-events:none}
 .peek{display:none;position:fixed;right:10px;bottom:10px;width:56px;height:56px;border-radius:50%;border:0;background:rgba(255,255,255,.12)}
 body.show .peek{display:block}
 
+
+/* roster */
+.ros{width:100%;display:grid;gap:6px;margin-top:6px}
+.ur{display:grid;grid-template-columns:auto minmax(0,1fr) auto auto;align-items:center;gap:8px;background:rgba(255,255,255,.06);border-radius:12px;padding:6px 8px;text-align:left;border-left:5px solid transparent}
+.ur.now{border-left-color:var(--yel);background:rgba(255,212,0,.12)}
+.tlc{width:52px;height:46px;border-radius:10px;border:0;background:var(--yel);color:#2a2100;display:grid;place-items:center;line-height:1;font:600 10px Inter,sans-serif}
+.tlc b{font:700 22px Oxanium,sans-serif}
+.un b{display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;font:700 clamp(15px,1.6vw,22px)/1.15 Oxanium,sans-serif}
+.un .tg{display:block;margin-top:2px}
+.un small{font-size:12px;color:var(--mute)}
+.ubar{display:block;height:7px;border-radius:3px;background:rgba(255,255,255,.15);margin-top:4px;overflow:hidden}
+.ubar i{display:block;height:100%;background:#22c55e}
+.ur.mid2 .ubar i{background:#f2b705}.ur.low .ubar i{background:#ef4444}
+.uhp{font:700 clamp(22px,2.4vw,34px)/1 Oxanium,sans-serif;white-space:nowrap;font-variant-numeric:tabular-nums}
+.uhp small{font-size:.5em;color:var(--mute)}
+.uc{display:flex;gap:4px}
+.hb{width:44px;height:44px;border-radius:10px;border:0;background:rgba(255,255,255,.14);font:700 20px Oxanium,sans-serif}
+.hb.rd2{width:auto;padding:0 10px;font:700 13px Inter,sans-serif;background:var(--c);color:#06122a}
+.ur.dead{opacity:.75}.ur.dead .un b{text-decoration:line-through}
+.ur.dead .uhp{color:#ef4444}
+.dtag{display:inline-block;font:700 11px Inter,sans-serif;background:#ef4444;color:#fff;border-radius:4px;padding:1px 5px;vertical-align:2px;text-decoration:none}
+.ntag{display:inline-block;font:700 11px Inter,sans-serif;background:var(--yel);color:#2a2100;border-radius:4px;padding:1px 5px;vertical-align:2px}
+.xb{display:none;width:44px;height:44px;border-radius:10px;border:0;background:#ef4444;color:#fff;font:700 18px Inter,sans-serif}
+body.edit .xb{display:block}
+.radd{display:none;gap:6px;width:100%}
+body.edit .radd,.radd.empty{display:flex}
+.radd select{flex:1;height:44px;border-radius:10px;border:0;background:rgba(255,255,255,.14);color:#fff;font:600 15px Inter,sans-serif;padding:0 8px}
+.radd select option{color:#111}
+.radd button{height:44px;padding:0 14px;border-radius:10px;border:0;background:var(--c);color:#06122a;font:700 15px Oxanium,sans-serif}
+#edit.on{background:var(--yel);color:#2a2100}
+.toast{position:fixed;left:50%;bottom:16px;transform:translateX(-50%);background:#111c38;border:1px solid rgba(255,255,255,.2);padding:10px 16px;border-radius:12px;font-size:15px;z-index:5;max-width:92vw;text-align:center}
+.toast[hidden]{display:none}
+body.hasr .vp{font-size:clamp(72px,11vw,170px)}
+body.hasr .main{align-items:start}
+body.show .uc,body.show .xb,body.show .radd{display:none!important}
+body.show .tlc{pointer-events:none}
+
 @media(max-width:760px) and (orientation:portrait){
+body.hasr .board{height:auto;min-height:100dvh}
+body.hasr .main{grid-template-rows:auto auto auto}
+body.hasr .vp{font-size:clamp(56px,9vh,110px)}
+.ur{gap:6px;padding:5px 6px}.tlc{width:44px;height:42px}.tlc b{font-size:19px}.hb{width:40px;height:40px}.uhp{font-size:22px}
+
 .board{height:100vh;height:100dvh;min-height:0;padding:8px;gap:6px;grid-template-rows:minmax(0,1fr) auto}
 .main{grid-template-columns:minmax(0,1fr);grid-template-rows:minmax(0,1fr) auto minmax(0,1fr);gap:6px;min-height:0;align-items:stretch}
 .pl{gap:2px;padding:6px 8px;border-radius:16px;align-content:center;min-height:0}
@@ -82,6 +124,8 @@ body.show .vp{font-size:clamp(90px,22vh,240px)}
    <input class="nm" id="n1" value="Player 1" aria-label="Player 1 name" maxlength="18">
    <div class="vp" id="v1">0</div><div class="vpl">VP</div>
    <div class="btns ctl"><button class="b" data-p="1" data-d="-1" aria-label="Player 1 minus 1">−1</button><button class="b add" data-p="1" data-d="1">+1</button><button class="b add" data-p="1" data-d="2">+2</button><button class="b add" data-p="1" data-d="5">+5</button></div>
+   <div class="ros" id="r1"></div>
+   <div class="radd ctl" id="a1"><select id="s1" aria-label="Unit to add for player 1"></select><button data-add="1">Add unit</button></div>
   </section>
   <section class="mid" aria-label="Phase and round">
    <div><div class="lbl">Phase</div><div class="ph" id="ph" role="button" tabindex="0" title="Tap to change phase">1 of 2</div></div>
@@ -94,21 +138,28 @@ body.show .vp{font-size:clamp(90px,22vh,240px)}
    <input class="nm" id="n2" value="Player 2" aria-label="Player 2 name" maxlength="18">
    <div class="vp" id="v2">0</div><div class="vpl">VP</div>
    <div class="btns ctl"><button class="b" data-p="2" data-d="-1" aria-label="Player 2 minus 1">−1</button><button class="b add" data-p="2" data-d="1">+1</button><button class="b add" data-p="2" data-d="2">+2</button><button class="b add" data-p="2" data-d="5">+5</button></div>
+   <div class="ros" id="r2"></div>
+   <div class="radd ctl" id="a2"><select id="s2" aria-label="Unit to add for player 2"></select><button data-add="2">Add unit</button></div>
   </section>
  </div>
  <div class="foot ctl">
-  <span>Tap a name to change it. +2 = Garrison defeated or rescued.</span>
-  <span style="display:flex;gap:8px"><button class="b" id="face">Face-to-face</button><button class="b" id="undo">Undo</button><button class="b" id="reset">New match</button><button class="b" id="disp" style="background:var(--yel);color:#2a2100">Display mode</button></span>
+  <span>Tap a name to change it. +2 = Garrison. Tap a unit's TL to move it up 1. Defeating a unit adds its VP to the other player and TL +2.</span>
+  <span style="display:flex;gap:8px"><button class="b" id="edit">Edit rosters</button><button class="b" id="face">Face-to-face</button><button class="b" id="undo">Undo</button><button class="b" id="reset">New match</button><button class="b" id="disp" style="background:var(--yel);color:#2a2100">Display mode</button></span>
  </div>
 </div>
 <button class="peek" id="peek" aria-label="Show controls"></button>
+<div class="toast" id="toast" hidden></div>
 <script>
 {
 const $=id=>document.getElementById(id);
 const K='ga.scoreboard';
-const fresh=()=>({n1:'Player 1',n2:'Player 2',v1:0,v2:0,ph:1,rd:1});
+const UNITS=[["st01-u01","Gundam (Legendary Hero)",15,8,2],["st01-u02","Wing Gundam Zero (EW)",12,9,3],["st01-u03","Gundam Barbatos Lupus Rex",17,10,2],["st01-u04","Char's Zaku II",12,7,2],["st01-u05","Gundam Epyon (EW)",15,9,3],["st01-u06","Gundam Vidar",13,7,1],["pa01-u01","Gundam (Elite Mobile Suit)",17,10,1],["pa01-u02","Guncannon",12,7,2],["pa01-u03","Guntank",13,7,2],["ex01-u01","Unicorn Gundam (Destroy Mode)",14,10,3],["ex01-u02","Torohachi",8,5,1],["ex01-u03","Delta Plus",11,7,2],["ex02-u01","Gundam Aerial",16,10,1],["ex02-u02","Gundam Pharact",12,7,2],["ex02-u03","Darilbalde",13,8,3]],UM=Object.fromEntries(UNITS.map(u=>[u[0],{id:u[0],name:u[1],hp:u[2],vp:u[3],tl:u[4]}]));
+const fresh=()=>({n1:'Player 1',n2:'Player 2',v1:0,v2:0,ph:1,rd:1,r1:[],r2:[]});
+const wrap=n=>((n-1)%10+10)%10+1;
+const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+let toastT=0;const toast=m=>{$('toast').textContent=m;$('toast').hidden=false;clearTimeout(toastT);toastT=setTimeout(()=>$('toast').hidden=true,3500)};
 let st=fresh(),hist=[],sure=false,sureT=0;
-try{const v=JSON.parse(localStorage.getItem(K));if(v&&typeof v==='object')st=Object.assign(fresh(),v)}catch(e){}
+try{const v=JSON.parse(localStorage.getItem(K));if(v&&typeof v==='object'){st=Object.assign(fresh(),v);st.r1=(st.r1||[]).filter(x=>UM[x.id]);st.r2=(st.r2||[]).filter(x=>UM[x.id])}}catch(e){}
 const save=()=>{try{localStorage.setItem(K,JSON.stringify(st))}catch(e){}};
 const push=()=>{hist.push(JSON.stringify(st));if(hist.length>60)hist.shift()};
 const bump=el=>{el.classList.add('bump');setTimeout(()=>el.classList.remove('bump'),160)};
@@ -116,6 +167,16 @@ function render(){
   $('n1').value=st.n1;$('n2').value=st.n2;$('v1').textContent=st.v1;$('v2').textContent=st.v2;
   $('ph').textContent=st.ph+' of 2';$('rd').textContent=st.rd;
   $('trk').innerHTML=Array.from({length:10},(_,i)=>`<i class="${i+1<st.rd?'done':i+1===st.rd?'on':''}"></i>`).join('');
+
+  ['1','2'].forEach(p=>{const R=st['r'+p]||[];
+    $('r'+p).innerHTML=R.map((x,j)=>{const u=UM[x.id];if(!u)return'';const f=x.hp/u.hp,cls=(x.dead?' dead':'')+(!x.dead&&x.tl===st.rd?' now':'')+(f<=.3?' low':f<=.6?' mid2':'');
+      return `<div class="ur${cls}"><button class="tlc" data-tl="${p}.${j}" aria-label="${esc(u.name)} Timeline ${x.tl}, tap to move up 1">TL<b>${x.tl}</b></button>
+      <div class="un"><b>${esc(u.name)}</b>${x.dead?'<span class="tg"><span class="dtag">DEFEATED</span></span>':x.tl===st.rd?'<span class="tg"><span class="ntag">ACTS NOW</span></span>':''}<span class="ubar"><i style="width:${Math.max(0,f*100)}%"></i></span></div>
+      <div class="uhp">${x.hp}<small>/${u.hp}</small></div>
+      <div class="uc">${x.dead?`<button class="hb rd2" data-redep="${p}.${j}">Redeploy</button>`:`<button class="hb" data-hp="${p}.${j}" data-d="-1" aria-label="${esc(u.name)} HP down">−</button><button class="hb" data-hp="${p}.${j}" data-d="1" aria-label="${esc(u.name)} HP up">+</button>`}<button class="xb" data-rm="${p}.${j}" aria-label="Remove ${esc(u.name)}">×</button></div></div>`}).join('');
+    $('a'+p).classList.toggle('empty',R.length<3);$('a'+p).style.visibility=R.length>=5?'hidden':'';
+  });
+  document.body.classList.toggle('hasr',!!(st.r1.length||st.r2.length));
   $('undo').style.opacity=hist.length?1:.4;
   $('reset').textContent=sure?'Tap again to reset':'New match';$('reset').classList.toggle('sure',sure);
 }
@@ -126,12 +187,27 @@ $('rdp').onclick=()=>{push();if(st.rd>=10){if(st.ph<4){st.ph++;st.rd=1}}else st.
 $('rdm').onclick=()=>{push();if(st.rd<=1){if(st.ph>1){st.ph--;st.rd=10}}else st.rd--;save();render()};
 ['n1','n2'].forEach(k=>$(k).addEventListener('change',()=>{const v=$(k).value.trim()||(k==='n1'?'Player 1':'Player 2');if(v!==st[k]){push();st[k]=v;save()}render()}));
 $('undo').onclick=()=>{if(hist.length){st=JSON.parse(hist.pop());save();render()}};
-$('reset').onclick=()=>{const now=Date.now();if(sure&&now-sureT<4000){push();st=Object.assign(fresh(),{n1:st.n1,n2:st.n2});sure=false;save();render();return}sure=true;sureT=now;render();setTimeout(()=>{if(sure&&Date.now()-sureT>=4000){sure=false;render()}},4100)};
+$('reset').onclick=()=>{const now=Date.now();if(sure&&now-sureT<4000){push();st=Object.assign(fresh(),{n1:st.n1,n2:st.n2,r1:st.r1.map(x=>({id:x.id,hp:UM[x.id].hp,tl:UM[x.id].tl,dead:false})),r2:st.r2.map(x=>({id:x.id,hp:UM[x.id].hp,tl:UM[x.id].tl,dead:false}))});sure=false;save();render();return}sure=true;sureT=now;render();setTimeout(()=>{if(sure&&Date.now()-sureT>=4000){sure=false;render()}},4100)};
 $('ph').onclick=()=>{if(document.body.classList.contains('show'))return;push();st.ph=st.ph>=2?1:st.ph+1;save();render()};
 let face=true;try{const f=localStorage.getItem('ga.face');if(f!==null)face=f==='1'}catch(e){}
 const applyFace=()=>{document.body.classList.toggle('face',face);$('face').textContent=face?'Flip: on':'Flip: off';$('face').style.background=face?'var(--p2)':'';$('face').style.color=face?'#06122a':''};
 $('face').onclick=()=>{face=!face;try{localStorage.setItem('ga.face',face?'1':'0')}catch(e){}applyFace()};
 applyFace();
+
+const opts='<option value="">Choose a unit…</option>'+[['ST01','Starter Set 01'],['PA01','PA01'],['EX01','Expansion 01'],['EX02','Expansion 02']].map(([k,l])=>`<optgroup label="${l}">${UNITS.filter(u=>u[0].startsWith(k.toLowerCase())).map(u=>`<option value="${u[0]}">${esc(u[1])} · HP ${u[2]} · VP ${u[3]}</option>`).join('')}</optgroup>`).join('');
+$('s1').innerHTML=opts;$('s2').innerHTML=opts;
+const at=k=>{const [p,j]=k.split('.');return[p,+j,st['r'+p][+j]]};
+document.addEventListener('click',e=>{const b=e.target.closest('[data-add],[data-tl],[data-hp],[data-redep],[data-rm]');if(!b)return;
+  if(b.dataset.add){const p=b.dataset.add,id=$('s'+p).value,u=UM[id];if(!u){toast('Choose a unit first.');return}if(st['r'+p].length>=5)return;push();st['r'+p].push({id,hp:u.hp,tl:u.tl,dead:false});$('s'+p).value='';save();render();return}
+  const key=b.dataset.tl||b.dataset.hp||b.dataset.redep||b.dataset.rm,[p,j,x]=at(key);if(!x)return;const u=UM[x.id],o=p==='1'?'2':'1';
+  if(b.dataset.tl){push();x.tl=wrap(x.tl+1);save();render();return}
+  if(b.dataset.rm){push();st['r'+p].splice(j,1);save();render();return}
+  if(b.dataset.redep){push();x.hp=u.hp;x.dead=false;save();render();toast(u.name+' redeployed at full HP.');return}
+  const d=+b.dataset.d;push();x.hp=Math.max(0,Math.min(u.hp,x.hp+d));
+  if(x.hp===0&&!x.dead){x.dead=true;st['v'+o]=Math.min(999,st['v'+o]+u.vp);x.tl=wrap(x.tl+2);save();render();bump($('v'+o));toast(u.name+' defeated: +'+u.vp+' VP to '+st['n'+o]+' · Timeline +2 (now TL '+x.tl+'). Undo if wrong.');return}
+  save();render();
+});
+let edit=false;$('edit').onclick=()=>{edit=!edit;document.body.classList.toggle('edit',edit);$('edit').classList.toggle('on',edit);$('edit').textContent=edit?'Done editing':'Edit rosters'};
 $('disp').onclick=()=>{document.body.classList.add('show')};
 $('peek').onclick=()=>{document.body.classList.remove('show')};
 render();
