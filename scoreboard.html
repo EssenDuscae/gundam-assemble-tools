@@ -5,12 +5,13 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>GA Scoreboard</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Oxanium:wght@500;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Oxanium:wght@500;700&family=Saira+Semi+Condensed:wght@600;700;800&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
 <style>
 /* VOICE: arena scoreboard, readable from across the store.
    IDEA: a match-day board for a Gundam Assemble table.
    PICTURE: two huge VP numbers in player colours with Phase and Round between them.
-   COLOUR and TYPE: navy board, blue vs red players, yellow round; Oxanium + Inter.
+   COLOUR and TYPE: game-sheet look: maroon playmat with hex grid, light grey sheet panels,
+   crimson / charcoal header bars with cut corners, red vs blue sides like the Timeline track; Saira Semi Condensed + Oxanium.
    LAYOUT: landscape three columns; stacks on a portrait phone. */
 :root{color-scheme:dark;--bg:#0b1630;--ink:#fff;--mute:rgba(255,255,255,.7);--p1:#5b9bff;--p2:#ff6b6b;--yel:#ffd400;--panel:rgba(255,255,255,.07)}
 *{box-sizing:border-box;min-width:0}
@@ -86,6 +87,50 @@ body.hasr .main{align-items:start}
 body.show .uc,body.show .xb,body.show .radd{display:none!important}
 body.show .tlc{pointer-events:none}
 
+/* ===== Game theme (matches the GA rule sheets / Timeline track) ===== */
+:root{color-scheme:light;--bg:#4a0d15;--ink:#1b1b1f;--mute:#5a5d66;--p1:#c8102e;--p2:#1f4fa8;--yel:#f2a900;--panel:#eceef1;--crim:#b3121f;--maroon:#6d0d16;--char:#232327;--line:#c4c8cf;
+--cut:polygon(0 0,calc(100% - 16px) 0,100% 16px,100% 100%,16px 100%,0 calc(100% - 16px));--cut-s:polygon(0 0,calc(100% - 9px) 0,100% 9px,100% 100%,9px 100%,0 calc(100% - 9px))}
+body{color:var(--ink);background-color:var(--bg);background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='56' height='97' viewBox='0 0 56 97'%3E%3Cpath d='M28 0l28 16v32L28 64 0 48V16zM28 64v33M0 16L-28 0M56 16l28-16' fill='none' stroke='%23ffffff' stroke-opacity='.06' stroke-width='1.5'/%3E%3C/svg%3E")}
+:focus-visible{outline:3px solid var(--yel)}
+.pl{background:var(--panel);border:0;border-radius:0;clip-path:var(--cut);padding:0 clamp(8px,1.6vw,18px) clamp(10px,1.6vw,18px);gap:6px;color:var(--ink)}
+.nm{background:var(--c);color:#fff;font-family:'Saira Semi Condensed',Oxanium,sans-serif;font-weight:800;letter-spacing:.02em;margin:0 calc(-1 * clamp(8px,1.6vw,18px)) 4px;width:calc(100% + 2 * clamp(8px,1.6vw,18px));padding:6px 14px;border-bottom:4px solid rgba(0,0,0,.25);clip-path:polygon(0 0,100% 0,100% 100%,22px 100%,0 calc(100% - 22px))}
+.p2 .nm{clip-path:polygon(0 0,100% 0,100% calc(100% - 22px),calc(100% - 22px) 100%,0 100%)}
+.nm:focus{border-bottom-color:#fff}
+.vp{color:var(--ink)}
+.vpl{color:#fff;background:var(--char);font:700 clamp(12px,1.3vw,18px) 'Saira Semi Condensed',sans-serif;letter-spacing:.12em;padding:2px 14px;clip-path:var(--cut-s)}
+.b{border-radius:0;clip-path:var(--cut-s);background:var(--char);color:#fff;font-family:'Saira Semi Condensed',Oxanium,sans-serif;font-weight:800}
+.b.add{background:var(--c);color:#fff}
+.mid{background:var(--char);color:#fff;padding:clamp(10px,1.6vw,20px) clamp(12px,2vw,24px);clip-path:var(--cut)}
+.mid .lbl{color:#fff;background:var(--crim);font:700 clamp(12px,1.3vw,17px) 'Saira Semi Condensed',sans-serif;letter-spacing:.1em;padding:2px 12px;clip-path:var(--cut-s)}
+.ph{font-family:'Saira Semi Condensed',Oxanium,sans-serif;font-weight:800}
+.rd{color:#fff}
+.track i{border-radius:0;background:rgba(255,255,255,.15);transform:skewX(-20deg)}
+.track i.done{background:#7a1a24}.track i.on{background:var(--crim)}
+.mid .sm .b{background:#3a3a40}
+.next{border-radius:0;clip-path:var(--cut-s);background:var(--crim);color:#fff;font-family:'Saira Semi Condensed',Oxanium,sans-serif;font-weight:800;letter-spacing:.03em}
+.foot{color:rgba(255,255,255,.75)}
+.foot .b{background:var(--char);color:#fff;font-family:'Saira Semi Condensed',Inter,sans-serif;font-weight:700;font-size:15px}
+.foot .b.sure,#edit.on{background:var(--yel);color:#2a1d00}
+#disp{background:var(--crim)!important;color:#fff!important}
+#face{}
+.peek{background:rgba(255,255,255,.18);border-radius:0;clip-path:var(--cut-s)}
+.ur{background:#fff;border:1px solid var(--line);border-left:5px solid var(--line);border-radius:0;color:var(--ink)}
+.ur.now{border-left-color:var(--yel);background:#fff6dc}
+.tlc{border-radius:0;clip-path:var(--cut-s);background:var(--maroon);color:#fff;font-family:'Saira Semi Condensed',sans-serif}
+.tlc b{font-family:'Saira Semi Condensed',Oxanium,sans-serif;font-weight:800}
+.un b{font-family:'Saira Semi Condensed',Oxanium,sans-serif;font-weight:700;font-size:clamp(14px,1.35vw,19px)}
+.ubar{background:#d8dbe0;border-radius:0}
+.uhp{color:var(--ink)}.uhp small{color:var(--mute)}
+.hb{border-radius:0;clip-path:var(--cut-s);background:#dfe2e7;color:var(--ink)}
+.hb.rd2{background:var(--c);color:#fff}
+.ur.dead{opacity:1;background:#e3e4e7}.ur.dead .un b{color:var(--mute)}
+.ur.dead .uhp{color:var(--crim)}
+.dtag{background:var(--crim);border-radius:0}.ntag{background:var(--yel);color:#2a1d00;border-radius:0}
+.xb{border-radius:0;background:var(--crim)}
+.radd select{border-radius:0;background:#fff;color:var(--ink);border:1px solid var(--line)}
+.radd button{border-radius:0;clip-path:var(--cut-s);background:var(--c);color:#fff}
+.toast{background:var(--char);border:0;border-left:5px solid var(--crim);border-radius:0;color:#fff}
+
 @media(max-width:760px) and (orientation:portrait){
 .ros,.radd,#edit{display:none!important}
 body.hasr .vp{font-size:clamp(72px,16vh,190px)}
@@ -113,6 +158,8 @@ body.face:not(.show) .p2{order:-2;transform:rotate(180deg)}
 body.face:not(.show) .mid{order:-1}
 #face{display:inline-flex;align-items:center}
 body.show .vp{font-size:clamp(90px,22vh,240px)}
+.pl{padding:0 8px 10px;align-content:stretch;grid-template-rows:auto minmax(0,1fr) auto auto}.pl .vp{align-self:center}.next{white-space:nowrap;font-size:15px;padding:0 10px}.nm{margin:0 -8px 2px;width:calc(100% + 16px);padding:4px 10px}
+.mid{padding:6px 10px}.mid .lbl{padding:1px 8px}
 }
 @media(prefers-reduced-motion:no-preference){.vp,.rd{transition:transform .15s}.bump{transform:scale(1.08)}}
 </style>
