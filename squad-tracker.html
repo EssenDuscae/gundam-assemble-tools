@@ -241,6 +241,7 @@ body{background-color:#4a0d15;background-image:url("data:image/svg+xml,%3Csvg xm
 textarea{border-radius:0;background:#fff}
 .foot .ab{background:var(--char)}.foot .ab.pri{background:var(--crim)}
 .foot .ab.sure,.ab.sure,.bin.sure{background:var(--amb);color:#2a1d00}
+.shbox{grid-column:1/-1}.pips{grid-column:1/-1;display:flex;gap:6px;flex-wrap:wrap;padding-top:4px}.pip{width:44px;height:40px;border:2px solid var(--blue);background:#fff;color:var(--blue);font-size:16px;border-radius:0;clip-path:var(--cut-s)}.pip.up{background:var(--blue);color:#fff}.piph{grid-column:1/-1;font-size:12px;color:var(--mute)}
 #msg,.empty{color:rgba(255,255,255,.78)}
 .pane{border-radius:0;clip-path:polygon(0 0,calc(100% - 18px) 0,100% 18px,100% 100%,0 100%);background:var(--card)}
 .pane h2{font-family:'Saira Semi Condensed',Oxanium,sans-serif;font-weight:800}
@@ -523,7 +524,7 @@ function card(s,i,minTl){
   ${(u.weapons||[]).length?`<div class="wq">${u.weapons.map((w,j)=>`<button class="wb" data-act="roll" data-i="${i}" data-w="${j}" aria-label="Attack roll with ${esc(w.name)}"><b>${esc(w.name)}</b><span>TL ${esc(w.tl)} · R ${esc(String(w.range).replace(' (area)',''))} · Str ${(+w.str||0)+s.str+pst.n+effStr(w.effect,s)}${pst.n?' ▲':''}</span><i>Roll</i></button>`).join('')}</div>`:''}${u.rws&&s.rwsOn?rwsRow(s,u,i):''}`;
   if(isOpen){
     h+=`<div class="more">
-    <div class="ctrs">${ctr(i,'en','Energy',s.en)}${ctr(i,'sh','Shield Upgrades',s.sh)}${ctr(i,'spd','Speed Upgrades',s.spd)}${ctr(i,'str','Strength Upgrades',s.str)}${s.sh?ctr(i,'shOff','Shields used (this round)',s.shOff):`<div class="ctr"><span>Shields used</span><span style="grid-column:1/-1;font-size:12px;padding:2px">Needs a Shield Upgrade first.</span><button style="grid-column:1/-1;font-size:14px" data-act="n" data-i="${i}" data-f="sh" data-d="1">+ Add Shield</button></div>`}</div>
+    <div class="ctrs">${ctr(i,'en','Energy',s.en)}<div class="ctr shbox"><span>Shield Upgrades</span><button data-act="n" data-i="${i}" data-f="sh" data-d="-1" aria-label="Shield Upgrades down">−</button><b>${s.sh}</b><button data-act="n" data-i="${i}" data-f="sh" data-d="1" aria-label="Shield Upgrades up">+</button>${s.sh?`<div class="pips">${Array.from({length:s.sh},(_,k)=>`<button class="pip${k<s.sh-s.shOff?' up':''}" data-act="pip" data-i="${i}" data-k="${k}" aria-label="Shield ${k+1} ${k<s.sh-s.shOff?'active':'used'}">${k<s.sh-s.shOff?'▲':'▽'}</button>`).join('')}</div><small class="piph">Tap a Shield to flip it up or down</small>`:''}</div>${ctr(i,'spd','Speed Upgrades',s.spd)}${ctr(i,'str','Strength Upgrades',s.str)}</div>
     <div class="row">${[['dis','Disarm'],['fra','Fracture'],['slo','Slow']].map(([f,l])=>`<button class="tg" data-act="t" data-i="${i}" data-f="${f}" aria-pressed="${!!s[f]}">${l}</button>`).join('')}</div>
     <div class="wp">${(u.weapons||[]).map((w,j)=>`<div class="w"><b>${esc(w.name)}</b><div class="st"><span>TL <em>${esc(w.tl)}</em></span><span>Range <em>${esc(w.range)}</em></span><span>Strength <em>${(+w.str||0)+s.str+pst.n+effStr(w.effect,s)}</em>${s.str||pst.n||effStr(w.effect,s)?` (${[esc(w.str)+' base',s.str?'+'+s.str+' upgrades':'',pst.n?'+'+pst.n+' '+pst.label:'',effStr(w.effect,s)?'+'+effStr(w.effect,s)+' effect':''].filter(Boolean).join(' ')})`:''}</span></div>${w.effect?`<p><span class="tag" style="background:var(--blue)">Effect</span>${esc(w.effect)}</p>`:''}${Array.isArray(w.aoe)&&w.aoe.length?`<div class="aoe">${aoeSvg(w.aoe)}<span>Area pattern: grey = this unit, red = hexes hit. Place it in any direction around the unit.</span></div>`:''}${w.crit?`<p><span class="tag">Critical</span>${esc(w.crit)}</p>`:''}</div>`).join('')}
     ${(u.abilities||[]).map(a=>`<div class="w">${isDep(u,a)?`<button class="skb${s.rwsOn?' on':''}" data-act="rwsdep" data-i="${i}"><b>${esc(a.name)}</b><i>${s.rwsOn?'✓ '+esc(u.rws.name)+' on screen · tap to reposition':'＋ Tap to add '+esc(u.rws.name)}</i></button>`:`<b>${esc(a.name)}</b>`}<p>${typeTag(a.type)}${a.energy?`<span class="tag" style="background:var(--yel);color:#211a00">Energy ${esc(a.energy)}</span>`:''}${esc(a.text)}</p></div>`).join('')}
@@ -614,6 +615,7 @@ document.addEventListener('click',e=>{
   case'undo':if(undo.length){game=JSON.parse(undo.pop());save();render()}break;
   case'tog':open.has(s.k)?open.delete(s.k):open.add(s.k);render();break;
   case'hp':commit(()=>{s.hp=Math.max(0,Math.min(u.hp,s.hp+d))});if(s.hp===0)msg(u.name+' is at 0 HP (defeated).');break;
+  case'pip':{const k=+b.dataset.k,act=s.sh-s.shOff;commit(()=>{s.shOff=k<act?s.sh-k:s.sh-k-1});}break;
   case'n':if(f==='shOff'&&!s.sh){msg('Add a Shield Upgrade first.');break}if(f==='shOff'&&d>0&&s.shOff>=s.sh){msg('All Shields are already used. They come back next time this unit activates.');break}
   commit(()=>{
     if(f==='tl')s.tl=wrap(s.tl+d);
